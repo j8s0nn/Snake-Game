@@ -14,7 +14,12 @@ public class Point2D
         X = x;
         Y = y;
     }
-    
-    
-    
+
+    public Point2D()
+    {
+        X = 0;
+        Y = 0;
+    }
+
+
 }
