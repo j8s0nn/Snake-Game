@@ -4,9 +4,14 @@
 @using Blazor.Extensions.Canvas
 @using Blazor.Extensions.Canvas.Canvas2D
 @using System.Diagnostics
+@using System.Security.Cryptography
+@using GUI.Components.Models
 @inject IJSRuntime JsRuntime;
 
 <PageTitle> Snake </PageTitle>
+
+<img @ref="backgroundImage" id="bgImage" src="images/Background.png" alt="image" style="display:none;" />
+
 
 <div id="snakeCanvas" style="position: fixed; width: 100%; height: 100%">
     <BECanvas Width="1000" Height="1000" @ref="_canvasReference"></BECanvas>
@@ -19,6 +24,12 @@
     private IJSObjectReference? _jsModule;
 
 
+    private World _world;
+
+    private ElementReference backgroundImage;
+
+    private const int ViewWidth = 1000;
+    private const int ViewHeight = 1000;
 
     protected override async Task OnAfterRenderAsync( bool firstRender )
     {
@@ -29,13 +40,133 @@
             await JsRuntime.InvokeAsync<object>( "initRenderJS", DotNetObjectReference.Create( this ) );           
 
             // TODO: Start the game loop
-
+            GameLoop();
             // in the meantime, draw something to initialize the canvas
             // you may want to remove this after you are drawing something
             await _context.SetFillStyleAsync( "lightblue" );
             await _context.FillRectAsync( 0, 0, 1000, 1000 );
         }
     }
+    
+    private async void GameLoop()
+    {
+        while ( true )
+        {
+            Thread.Sleep( 20 );
+            await DrawFrame();
+        }
+    }
+
+    private async Task DrawFrame()
+    {
+        World temp;
+        lock (_world)
+        {
+            temp = new World(); // Make a copy for await to work
+        }
+        
+        
+        await _context.BeginPathAsync();
+        // await _context.RectAsync( 0, 0, ViewWidth, ViewHeight );
+        // await _context.ClipAsync();
+        //
+        // // Because we are modifying the transformation matrix, we need to save it so we can restore it at the end
+        // await _context.SaveAsync();
+        //
+        //
+        // // Center on origin, move to center of view port
+        // await _context.TranslateAsync( ViewWidth / 2, ViewHeight / 2 );
+
+        // Draw the background:
+        await _context.DrawImageAsync( backgroundImage, -temp.Width / 2, -temp.Height / 2, temp.Width, temp.Height );
+
+        foreach (Wall wall in temp.Walls.Values)
+        {
+            DrawWall(wall);
+        }
+        
+        foreach (Player player in temp.Players.Values)
+        {
+            DrawPlayer(player);
+        }
+
+        foreach (Powerup powerup in temp.Powerups.Values)
+        {
+            DrawPowerup(powerup);
+        }
+
+        
+
+    }
+
+
+    private async Task DrawPlayer(Player player)
+    {
+        
+        //TODO: Handle color.
+        if (_context is null || player.Body.Count == 0 || !player.Alive)
+        {
+            return;
+        }
+        
+        await _context.BeginBatchAsync();
+
+
+        // Move to the tail of the snake
+        await _context.MoveToAsync(player.Body[0].X, player.Body[0].Y);
+
+
+        for (int i = 1; i < player.Body.Count(); i++)
+        {
+            Point2D point = player.Body[i];
+            await _context.LineToAsync(point.X, point.Y);
+        }
+        
+        await _context.StrokeAsync();
+
+    }
+
+
+    private async Task DrawPowerup(Powerup powerup)
+    {
+        if (_context is null || powerup.IsDied)
+        {
+            return;
+        }
+
+        await _context.BeginBatchAsync();
+        
+        await _context.SetLineWidthAsync( 10 ); // Set the stroke (border)
+        // await _context.SetStrokeStyleAsync( $"rgb( 255, 255, 200 )" );
+        await _context.BeginPathAsync();
+        await _context.ArcAsync( powerup.Location.X, powerup.Location.Y, 16, 1 * Math.PI, 64 * Math.PI ); // 16 radius powerup
+        
+        await _context.StrokeAsync();
+
+
+    }
+
+    private async Task DrawWall(Wall wall)
+    {
+        if (_context is null)
+        {
+            return;
+        }
+
+        if (wall.p1.X == wall.p2.X) // Vertically
+        {
+            await _context.FillRectAsync(wall.p1.X - 25, Math.Min(wall.p1.Y, wall.p2.Y) , 50, Math.Abs(wall.p1.Y - wall.p2.Y) ); // -25 to make the wall center at X
+        }
+        else // Horizontally
+        {
+            await _context.FillRectAsync(Math.Min(wall.p1.X, wall.p2.X), wall.p1.Y - 25, Math.Abs(wall.p1.X - wall.p2.X), 50);
+        }
+        
+    }
+
+
+
+
 
 
 

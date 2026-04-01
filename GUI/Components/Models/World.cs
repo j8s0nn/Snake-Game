@@ -9,30 +9,32 @@ public class World
     
     public Dictionary<int, Powerup> Powerups { get; private set; }
 
-    private int Width { get; set; } = 0;
-    private int Height { get; set; } = 0;
+    public int Width { get; set; } = 0;
+    public int Height { get; set; } = 0;
+
+    public bool HasChanged { get; set; } = false;
 
     public World()
     {
         Players = new Dictionary<int, Player>();
         Walls = new Dictionary<int, Wall>();
         Powerups = new Dictionary<int, Powerup>();
-        
+        HasChanged = false;
     }
     
 
     public void SetPlayerID(int ID)
     {
-            if (Players.ContainsKey(ID))
-            {
-                Players[ID] = new Player();
-            }
-            else
-            {
-                Players.Add(ID, new Player());
-            }
+        if (Players.ContainsKey(ID))
+        {
+            Players[ID] = new Player();
+        }
+        else
+        {
+            Players.Add(ID, new Player());
+        }
         
-
+        HasChanged = true;
     
     }
 
@@ -53,17 +55,17 @@ public class World
         }
 
         
-
+        HasChanged = true;
     }
 
 
     public void SetSize(int width, int height)
     {
         
-            Width = width;
-            Height = height;
+        Width = width;
+        Height = height;
             
-        
+        HasChanged = true;
 
     }
 
@@ -83,7 +85,7 @@ public class World
             Walls.Add(wall.ID, wall);
         }
             
-        
+        HasChanged = true;
 
 
     }
@@ -103,9 +105,9 @@ public class World
         {
             Powerups.Add(powerup.ID, powerup);
         }
-            
-        
 
+
+        HasChanged = true;
     }
 
 
