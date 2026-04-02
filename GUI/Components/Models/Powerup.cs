@@ -16,4 +16,11 @@ public class Powerup
         Location = new Point2D();
         IsDied = false;
     }
+
+    public Powerup(Powerup other)
+    {
+        ID = other.ID;
+        Location = new Point2D(other.Location.X, other.Location.Y);
+        IsDied = other.IsDied;
+    }
 }

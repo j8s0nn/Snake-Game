@@ -19,4 +19,12 @@ public class Wall
         p1 = new Point2D();
         p2 = new Point2D();
     }
+
+
+    public Wall(Wall other)
+    {
+        ID = other.ID;
+        p1 = new Point2D(other.p1.X, other.p1.Y);
+        p2 = new Point2D(other.p2.X, other.p2.Y);
+    }
 }

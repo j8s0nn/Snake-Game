@@ -35,4 +35,28 @@ public class Player
         Joined = true;
     }
 
+
+    public Player(Player other)
+    {
+        ID = other.ID;
+        Name = other.Name;
+        Score = other.Score;
+        IsDisconnected = other.IsDisconnected;
+        Joined = other.Joined;
+        Died = other.Died;
+        Alive = other.Alive;
+        
+        //Make a copy
+        Body = new List<Point2D>();
+        foreach (var p in other.Body)
+        {
+            Body.Add(new Point2D(p.X, p.Y));
+        }
+
+        //Make a copy 
+        Direction = new Point2D(other.Direction.X, other.Direction.Y);
+
+    }
+    
+
 }

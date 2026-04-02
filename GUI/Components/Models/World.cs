@@ -21,9 +21,39 @@ public class World
         Powerups = new Dictionary<int, Powerup>();
         HasChanged = false;
     }
-    
 
-    public void SetPlayerID(int ID)
+    
+    /// <summary>
+    /// This constructor is used for creating a copy of a world
+    /// </summary>
+    /// <param name="oldWorld">the old world that needs to make a copy of</param>
+    public World(World oldWorld)
+    {
+        Players = new Dictionary<int, Player>();
+        foreach (var oldPlayer in oldWorld.Players)
+        {
+            Players[oldPlayer.Key] = new Player(oldPlayer.Value);
+        }
+
+        Walls = new Dictionary<int, Wall>();
+        foreach (var oldWall in oldWorld.Walls)
+        {
+            Walls[oldWall.Key] = new Wall(oldWall.Value);
+        }
+
+        Powerups = new Dictionary<int, Powerup>();
+        foreach (var oldPowerup in oldWorld.Powerups)
+        {
+            Powerups[oldPowerup.Key] = new Powerup(oldPowerup.Value);
+        }
+
+        Width = oldWorld.Width;
+        Height = oldWorld.Height;
+        HasChanged = oldWorld.HasChanged;
+    }
+
+
+    public void SetPlayerId(int ID)
     {
         if (Players.ContainsKey(ID))
         {
