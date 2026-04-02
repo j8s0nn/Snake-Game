@@ -129,41 +129,38 @@ public class NetworkController
 
           try
           {
-               using JsonDocument doc = JsonDocument.Parse(line);
-               JsonElement root = doc.RootElement;
-               
-               if (root.TryGetProperty("wall", out _))
+               if (line.Contains("wall") && line.Contains("p1") && line.Contains("p2"))
                {
                     Wall? wall = JsonSerializer.Deserialize<Wall>(line);
-                    
                     if (wall != null)
                     {
                          world.AddWalls(wall);
-                         return;
+                         
                     }
-               }
-               else if (root.TryGetProperty("snake", out _))
+
+                    
+               }else if (line.Contains("power") && line.Contains("loc"))
                {
+                    Powerup? powerup = JsonSerializer.Deserialize<Powerup>(line);
+                    if (powerup != null)
+                    {
+                         world.AddPowerup(powerup);
+                    }
+
+               }
+               else // Player
+               { 
                     Player? player = JsonSerializer.Deserialize<Player>(line);
                     if (player != null)
                     {
                          world.AddPlayer(player);
-                         return;
                     }
-               }
-               else if (root.TryGetProperty("power", out _))
-               {
-                    Powerup? power = JsonSerializer.Deserialize<Powerup>(line);
-                    if (power != null)
-                    {
-                         world.AddPowerup(power);
-                         return;
-                    }
+
                }
           }
-          catch (Exception ex)
+          catch(Exception e)
           {
-               HandleError(ex);
+               HandleError(e);
           }
      }
 
