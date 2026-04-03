@@ -5,17 +5,42 @@
 @using Blazor.Extensions.Canvas.Canvas2D
 @using System.Diagnostics
 @using System.Security.Cryptography
+@using GUI.Components.Controllers
 @using GUI.Components.Models
+@using Microsoft.AspNetCore.Hosting.Server.Features
 @inject IJSRuntime JsRuntime;
+
 
 <PageTitle> Snake </PageTitle>
 
-<img @ref="backgroundImage" id="bgImage" src="images/Background.png" alt="image" style="display:none;" />
+<img @ref="backgroundImage" id="bgImage" src="images/images/Background.png" alt="image" style="display:none;" />
+
+<div class="tool-box">
+    <label >Name</label>
+    <input @bind="_playerName" maxlength="16"  placeholder="Type your name here"/>
+
+    <labe>Server address</labe>
+    <input @bind="_serverAddress" placeholder="Server address"/>
+
+    <labe>Server port</labe>
+    <input @bind="_port" placeholder="Server port"/>
+
+    <button @onclick="Connect">Connect</button>
+
+
+
+    <button @onclick="Disconnect">Disconnect</button>
+</div>
+
+
+@* <button @onclick="Count">Click me</button> *@
+@* <p>Result: @result</p> *@
 
 
 <div id="snakeCanvas" style="position: fixed; width: 100%; height: 100%">
     <BECanvas Width="1000" Height="1000" @ref="_canvasReference"></BECanvas>
 </div>
+
 
 @code
 {
@@ -23,14 +48,38 @@
     private Canvas2DContext? _context;
     private IJSObjectReference? _jsModule;
 
-
-    private World _world;
-
+    private NetworkController _controller = new NetworkController();
+    
+    private string _playerName = "a";
+    private string _serverAddress = "localhost";
+    
+    private int _port = 11000;
+    private World _world = new World();
+    
     private ElementReference backgroundImage;
-
-    private const int ViewWidth = 1000;
+    
+    private  int ViewWidth = 1000;
     private const int ViewHeight = 1000;
+    
+    private void Connect() // TODO: async task or not?
+    {
+        Console.WriteLine("IN connect method");
+        new Thread(() =>_controller.Connect(_serverAddress, _port, _playerName, _world)).Start();
+        
+    }
 
+
+    // int result = 0;
+    // private void Count()
+    // {
+    //     result++;
+    // }
+
+    private void Disconnect()
+    {
+        _controller.Disconnect();    
+    }
+    
     protected override async Task OnAfterRenderAsync( bool firstRender )
     {
         if ( firstRender )
@@ -38,147 +87,167 @@
             _jsModule = await JsRuntime.InvokeAsync<IJSObjectReference>( "import", "./Components/Pages/SnakeGUI.razor.js" );
             _context = await _canvasReference.CreateCanvas2DAsync();
             await JsRuntime.InvokeAsync<object>( "initRenderJS", DotNetObjectReference.Create( this ) );           
-
+    
             // TODO: Start the game loop
-            GameLoop();
+            
+            _ = GameLoop();
+            
             // in the meantime, draw something to initialize the canvas
             // you may want to remove this after you are drawing something
-            await _context.SetFillStyleAsync( "lightblue" );
-            await _context.FillRectAsync( 0, 0, 1000, 1000 );
+            //await _context.SetFillStyleAsync( "lightblue" );
+            //await _context.FillRectAsync( 0, 0, 1000, 1000 );
         }
     }
-    
-    private async void GameLoop()
+    //
+    private async Task GameLoop()
     {
         while ( true )
         {
-            Thread.Sleep( 20 );
+            await Task.Delay( 20 );
             await DrawFrame();
         }
     }
 
-    private async Task DrawFrame()
+    private async Task DrawFrame() // Dealing with the old world
     {
+        await _context.SetFillStyleAsync("lightblue");
+        
+        await _context.BeginBatchAsync();
+        await _context.FillRectAsync(0, 0, 1000, 1000);
+
+        
+        Console.WriteLine("Check Draw", _world);
         World temp;
         lock (_world)
         {
-            temp = new World(); // Make a copy for await to work
+            temp = new World(_world);
         }
-        
-        
-        await _context.BeginPathAsync();
-        // await _context.RectAsync( 0, 0, ViewWidth, ViewHeight );
-        // await _context.ClipAsync();
-        //
-        // // Because we are modifying the transformation matrix, we need to save it so we can restore it at the end
-        // await _context.SaveAsync();
-        //
-        //
-        // // Center on origin, move to center of view port
-        // await _context.TranslateAsync( ViewWidth / 2, ViewHeight / 2 );
 
-        // Draw the background:
-        await _context.DrawImageAsync( backgroundImage, -temp.Width / 2, -temp.Height / 2, temp.Width, temp.Height );
-
-        foreach (Wall wall in temp.Walls.Values)
+        try
         {
-            DrawWall(wall);
+            if (_controller.IsConnected && _world.Players.Count != 0)
+            {
+                
+                await _context.BeginPathAsync();
+        
+                await _context.RectAsync(0, 0, ViewWidth, ViewHeight);
+                await _context.ClipAsync();
+        
+                // Because we are modifying the transformation matrix, we need to save it so we can restore it at the end
+                await _context.SaveAsync();
+        
+        
+                // Center on origin, move to center of view port
+                await _context.TranslateAsync(ViewWidth / 2, ViewHeight / 2);
+                await _context.TranslateAsync(-temp.GetSnakeHead().X, -temp.GetSnakeHead().Y);
+        
+                // Draw the background:
+                await _context.DrawImageAsync(backgroundImage, -temp.Width / 2, -temp.Height / 2, temp.Width, temp.Height);
+        
+                foreach (Wall wall in temp.Walls.Values)
+                {
+                    await DrawWall(wall); // await to wait for it to finish 
+                }
+        
+                foreach (Player player in temp.Players.Values)
+                {
+                    await DrawPlayer(player);
+                }
+                
+                foreach (Powerup powerup in temp.Powerups.Values)
+                {
+                    await DrawPowerup(powerup);
+                }
+            }
+        
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
         }
         
-        foreach (Player player in temp.Players.Values)
-        {
-            DrawPlayer(player);
-        }
+                // Draw the background:
+                
+            await _context.RestoreAsync();
 
-        foreach (Powerup powerup in temp.Powerups.Values)
-        {
-            DrawPowerup(powerup);
-        }
-
+            await _context.EndBatchAsync();
+            StateHasChanged();        
         
-
+      
     }
-
 
     private async Task DrawPlayer(Player player)
-    {
-        
-        //TODO: Handle color.
-        if (_context is null || player.Body.Count == 0 || !player.Alive)
         {
-            return;
-        }
+            
+            //TODO: Handle color.
+            if (_context is null || player.Body.Count == 0 || !player.Alive)
+            {
+                return;
+            }
+
+            await _context.BeginPathAsync();
+            // Move to the tail of the snake
+            await _context.MoveToAsync(player.Body[0].X, player.Body[0].Y);
         
-        await _context.BeginBatchAsync();
-
-
-        // Move to the tail of the snake
-        await _context.MoveToAsync(player.Body[0].X, player.Body[0].Y);
-
-
-        for (int i = 1; i < player.Body.Count(); i++)
-        {
-            Point2D point = player.Body[i];
-            await _context.LineToAsync(point.X, point.Y);
-        }
         
+            for (int i = 1; i < player.Body.Count(); i++)
+            {
+                Point2D point = player.Body[i];
+                await _context.LineToAsync(point.X, point.Y);
+            }
+            
         await _context.StrokeAsync();
-
-    }
-
-
-    private async Task DrawPowerup(Powerup powerup)
-    {
-        if (_context is null || powerup.IsDied)
-        {
-            return;
-        }
-
-        await _context.BeginBatchAsync();
         
-        await _context.SetLineWidthAsync( 10 ); // Set the stroke (border)
-        // await _context.SetStrokeStyleAsync( $"rgb( 255, 255, 200 )" );
-        await _context.BeginPathAsync();
-        await _context.ArcAsync( powerup.Location.X, powerup.Location.Y, 16, 1 * Math.PI, 64 * Math.PI ); // 16 radius powerup
-        
-        await _context.StrokeAsync();
-
-
-    }
-
-    private async Task DrawWall(Wall wall)
-    {
-        if (_context is null)
-        {
-            return;
-        }
-
-        if (wall.p1.X == wall.p2.X) // Vertically
-        {
-            await _context.FillRectAsync(wall.p1.X - 25, Math.Min(wall.p1.Y, wall.p2.Y) , 50, Math.Abs(wall.p1.Y - wall.p2.Y) ); // -25 to make the wall center at X
-        }
-        else // Horizontally
-        {
-            await _context.FillRectAsync(Math.Min(wall.p1.X, wall.p2.X), wall.p1.Y - 25, Math.Abs(wall.p1.X - wall.p2.X), 50);
         }
         
+        
+        private async Task DrawPowerup(Powerup powerup)
+        {
+            if (_context is null || powerup.IsDied)
+            {
+                return;
+            }
+            
+            
+            await _context.SetLineWidthAsync( 10 ); // Set the stroke (border)
+            await _context.BeginPathAsync();
+            // await _context.SetStrokeStyleAsync( $"rgb( 255, 255, 200 )" );
+            await _context.ArcAsync( powerup.Location.X, powerup.Location.Y, 16, 0 * Math.PI, 2 * Math.PI ); // 16 radius powerup
+            
+            await _context.StrokeAsync();
+        
+        }
+        
+        private async Task DrawWall(Wall wall)
+        {
+            if (_context is null)
+            {
+                return;
+            }
+        
+            if (wall.p1.X == wall.p2.X) // Vertically
+            {
+                await _context.FillRectAsync(wall.p1.X - 25, Math.Min(wall.p1.Y, wall.p2.Y) , 50, Math.Abs(wall.p1.Y - wall.p2.Y) ); // -25 to make the wall center at X
+            }
+            else // Horizontally
+            {
+                await _context.FillRectAsync(Math.Min(wall.p1.X, wall.p2.X), wall.p1.Y - 25, Math.Abs(wall.p1.X - wall.p2.X), 50);
+            }
+            
+        }
+        
     }
 
 
-
-
-
-
-
-    [JSInvokable]
-    public void HandleKeyPress( string key )
-    {
-        // TODO: Once the client is connected and the handshake is complete,
-        //       invoke some controller method to send the appropriate command to the server
-
-
-        // TODO: Remove this, which is just here to show you what the 'key' string is for whatever key you pressed
-        Debug.WriteLine("key pressed: " + key);
-    }
-
-}
+    @* [JSInvokable] *@
+    @* public void HandleKeyPress(string key) *@
+    @* { *@
+    @*     // TODO: Once the client is connected and the handshake is complete, *@
+    @*     //       invoke some controller method to send the appropriate command to the server *@
+    @* *@
+    @* *@
+    @*     // TODO: Remove this, which is just here to show you what the 'key' string is for whatever key you pressed *@
+    @*     Debug.WriteLine("key pressed: " + key); *@
+    @*         } *@
+    @* *@
+    @*     } *@
