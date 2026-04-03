@@ -228,7 +228,11 @@
              await _context.ArcAsync( playerHead.X, playerHead.Y, 4, 0 * Math.PI, 2 * Math.PI );
             
              //Fill the head 
-             await _context.SetFillStyleAsync(colors[player.ID % 10]); 
+             await _context.SetFillStyleAsync(colors[player.ID % 10]);
+
+             
+             ///TODO: Add name
+             await _context.SetFontAsync("Arial");
             
             //saawait _context.FillAsync();
             //
@@ -262,44 +266,43 @@
                 return;
             }
         
-            float x, y;
+            
 
             if (wall.p1.X == wall.p2.X) // Vertical
             {
-                x = wall.p1.X - 25; // center
-                y = Math.Min(wall.p1.Y, wall.p2.Y);
-                
-                // for (float i = y; y <= Math.Max(wall.p1.Y, wall.p2.Y); i += 25)
-                // {
-                //     await _context.DrawImageAsync(
-                //         wallImage,
-                //         x,
-                //         i,
-                //         25,
-                //         25
-                //     );
-                // }
+                float x = wall.p1.X;
+                float startY = Math.Min(wall.p1.Y, wall.p2.Y);
+                float endY = Math.Max(wall.p1.Y, wall.p2.Y);
+
+                for (float i = startY; i <= endY; i += 25)
+                {
+                    await _context.DrawImageAsync(
+                        wallImage,
+                        x-25,
+                        i-25,
+                        50,
+                        50
+                    );
+                }
             }
 
             else // Horizontal
             {
-                x = Math.Min(wall.p1.X, wall.p2.X);
-                y = wall.p1.Y - 25;
-                
-                // for (float i = x; x <= Math.Max(wall.p1.X, wall.p2.X); i += 25)
-                // {
-                //     await _context.DrawImageAsync(
-                //         wallImage,
-                //         i,
-                //         y,
-                //         25,
-                //         25
-                //     );
-                // }
+                float y = wall.p1.Y;
+                float startX = Math.Min(wall.p1.X, wall.p2.X);
+                float endX = Math.Max(wall.p1.X, wall.p2.X);
+
+                for (float i = startX; i <= endX; i += 25)
+                {
+                    await _context.DrawImageAsync(
+                        wallImage,
+                        i-25,
+                        y-25,
+                        50,
+                        50
+                    );
+                }
             }
-            
-            
-            
             
         }
         
