@@ -14,6 +14,7 @@
 <PageTitle> Snake </PageTitle>
 
 <img @ref="backgroundImage" id="bgImage" src="images/images/Background.png" alt="image" style="display:none;" />
+<img @ref="wallImage"  src="images/images/WallSprite.png" alt="image" style="display:none;" />
 
 <div class="tool-box">
     <label >Name</label>
@@ -52,11 +53,28 @@
     
     private string _playerName = "a";
     private string _serverAddress = "localhost";
-    
     private int _port = 11000;
+    
     private World _world = new World();
     
+    private string[] colors =
+    {
+        "red",
+        "blue",
+        "green",
+        "yellow",
+        "purple",
+        "cyan",
+        "orange",
+        "pink",
+        "lime",
+        "magenta"
+    };
+    
+    
     private ElementReference backgroundImage;
+
+    private ElementReference wallImage;
     
     private  int ViewWidth = 1000;
     private const int ViewHeight = 1000;
@@ -179,24 +197,39 @@
     private async Task DrawPlayer(Player player)
         {
             
-            //TODO: Handle color.
             if (_context is null || player.Body.Count == 0 || !player.Alive)
             {
                 return;
             }
 
             await _context.BeginPathAsync();
+            
+            //Set colors of player
+            await _context.SetStrokeStyleAsync(colors[player.ID % 10]); 
+        
+            // set the width of a snake
+            await _context.SetLineWidthAsync( 5 ); 
+            
             // Move to the tail of the snake
             await _context.MoveToAsync(player.Body[0].X, player.Body[0].Y);
         
         
-            for (int i = 1; i < player.Body.Count(); i++)
+            for (int i = 1; i < player.Body.Count() - 1 ; i++)
             {
                 Point2D point = player.Body[i];
+                
                 await _context.LineToAsync(point.X, point.Y);
             }
             
-        await _context.StrokeAsync();
+            //Draw head of the snake
+            Point2D playerHead = player.Body[^1];
+            await _context.ArcAsync( playerHead.X, playerHead.Y, 7, 0 * Math.PI, 2 * Math.PI );
+            
+            //Fill the head 
+            await _context.SetFillStyleAsync(colors[player.ID % 10]); 
+            await _context.FillAsync();
+            
+            await _context.StrokeAsync();
         
         }
         
@@ -211,8 +244,9 @@
             
             await _context.SetLineWidthAsync( 10 ); // Set the stroke (border)
             await _context.BeginPathAsync();
-            // await _context.SetStrokeStyleAsync( $"rgb( 255, 255, 200 )" );
-            await _context.ArcAsync( powerup.Location.X, powerup.Location.Y, 16, 0 * Math.PI, 2 * Math.PI ); // 16 radius powerup
+            
+            await _context.SetStrokeStyleAsync( $"rgb( 255, 255, 200 )" );
+            await _context.ArcAsync( powerup.Location.X, powerup.Location.Y, 4, 0 * Math.PI, 2 * Math.PI ); 
             
             await _context.StrokeAsync();
         
@@ -225,14 +259,30 @@
                 return;
             }
         
-            if (wall.p1.X == wall.p2.X) // Vertically
+            float x, y, width, height;
+
+            if (wall.p1.X == wall.p2.X) // Vertical
             {
-                await _context.FillRectAsync(wall.p1.X - 25, Math.Min(wall.p1.Y, wall.p2.Y) , 50, Math.Abs(wall.p1.Y - wall.p2.Y) ); // -25 to make the wall center at X
+                x = wall.p1.X - 25;
+                y = Math.Min(wall.p1.Y, wall.p2.Y);
+                width = 50;
+                height = Math.Abs(wall.p1.Y - wall.p2.Y);
             }
-            else // Horizontally
+            else // Horizontal
             {
-                await _context.FillRectAsync(Math.Min(wall.p1.X, wall.p2.X), wall.p1.Y - 25, Math.Abs(wall.p1.X - wall.p2.X), 50);
+                x = Math.Min(wall.p1.X, wall.p2.X);
+                y = wall.p1.Y - 25;
+                width = Math.Abs(wall.p1.X - wall.p2.X);
+                height = 50;
             }
+            
+            await _context.DrawImageAsync(
+                wallImage,
+                x,
+                y,
+                width,
+                height
+            );
             
         }
         
