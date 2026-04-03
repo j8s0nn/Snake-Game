@@ -9,8 +9,6 @@ public class NetworkController
 {
      private NetworkConnection _client;
 
- 
-
      /// <summary>
      ///Store the current Task that working on. 
      /// </summary>
@@ -45,14 +43,14 @@ public class NetworkController
                //TODO: Handling name
                return;
           }
-          
+
           //Create a new connection
           _client = new NetworkConnection();
 
           _client.Connect(serverAddress, port);
 
           _client.Send(name);
-          
+
           Debug.WriteLine("Connected");
 
           ProcessInput(world);
@@ -62,9 +60,9 @@ public class NetworkController
 
      private void ProcessInput(World world)
      {
-          
+
           HandleFirstLineInput(world);
-          
+
           while (IsConnected) // Reading the input from the client
           {
                HandleInput(world);
@@ -130,11 +128,12 @@ public class NetworkController
                     if (wall != null)
                     {
                          world.AddWalls(wall);
-                         
+
                     }
 
-                    
-               }else if (line.Contains("power") && line.Contains("loc"))
+
+               }
+               else if (line.Contains("power") && line.Contains("loc"))
                {
                     Powerup? powerup = JsonSerializer.Deserialize<Powerup>(line);
                     if (powerup != null)
@@ -144,7 +143,7 @@ public class NetworkController
 
                }
                else // Player
-               { 
+               {
                     Player? player = JsonSerializer.Deserialize<Player>(line);
                     if (player != null)
                     {
@@ -153,7 +152,7 @@ public class NetworkController
 
                }
           }
-          catch(Exception e)
+          catch (Exception e)
           {
                HandleError(e);
           }
@@ -168,20 +167,45 @@ public class NetworkController
           Console.WriteLine(e.Message);
 
           _client?.Disconnect();
-          
+
           // client = null;
-          
+
      }
-     
+
 
      public void Disconnect()
      {
           _client?.Disconnect();
      }
 
-     
-     public void HandleMovement(string jsonstring)
+
+     public void HandleMovement( string key)
      {
+
+          if (!_client.IsConnected)
+          {
+               return;
+          }
+
+          if (key == "w")
+          {
+               _client.Send("{\"moving\":\"up\"}");
+          }
+
+          if (key == "a")
+          {
+               _client.Send("{\"moving\":\"left\"}");
+          }
+          
+          if (key == "d")
+          {
+               _client.Send("{\"moving\":\"right\"}");
+          }
+
+          if (key == "s")
+          {
+               _client.Send("{\"moving\":\"down\"}");
+          }
           
      }
 }
