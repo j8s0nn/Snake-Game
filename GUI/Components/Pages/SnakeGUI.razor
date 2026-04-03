@@ -208,29 +208,32 @@
             await _context.SetStrokeStyleAsync(colors[player.ID % 10]); 
         
             // set the width of a snake
-            await _context.SetLineWidthAsync( 5 ); 
+            await _context.SetLineWidthAsync( 10 ); 
             
             // Move to the tail of the snake
             await _context.MoveToAsync(player.Body[0].X, player.Body[0].Y);
         
         
-            for (int i = 1; i < player.Body.Count() - 1 ; i++)
+            for (int i = 1; i < player.Body.Count() ; i++)
             {
                 Point2D point = player.Body[i];
                 
                 await _context.LineToAsync(point.X, point.Y);
             }
-            
+
+            // await _context.StrokeAsync();
             //Draw head of the snake
-            Point2D playerHead = player.Body[^1];
-            await _context.ArcAsync( playerHead.X, playerHead.Y, 7, 0 * Math.PI, 2 * Math.PI );
+             Point2D playerHead = player.Body[^1];
+             await _context.SetLineWidthAsync( 10 );
+             await _context.ArcAsync( playerHead.X, playerHead.Y, 4, 0 * Math.PI, 2 * Math.PI );
             
-            //Fill the head 
-            await _context.SetFillStyleAsync(colors[player.ID % 10]); 
-            await _context.FillAsync();
+             //Fill the head 
+             await _context.SetFillStyleAsync(colors[player.ID % 10]); 
             
+            //saawait _context.FillAsync();
+            //
             await _context.StrokeAsync();
-        
+
         }
         
         
@@ -259,45 +262,64 @@
                 return;
             }
         
-            float x, y, width, height;
+            float x, y;
 
             if (wall.p1.X == wall.p2.X) // Vertical
             {
-                x = wall.p1.X - 25;
+                x = wall.p1.X - 25; // center
                 y = Math.Min(wall.p1.Y, wall.p2.Y);
-                width = 50;
-                height = Math.Abs(wall.p1.Y - wall.p2.Y);
+                
+                // for (float i = y; y <= Math.Max(wall.p1.Y, wall.p2.Y); i += 25)
+                // {
+                //     await _context.DrawImageAsync(
+                //         wallImage,
+                //         x,
+                //         i,
+                //         25,
+                //         25
+                //     );
+                // }
             }
+
             else // Horizontal
             {
                 x = Math.Min(wall.p1.X, wall.p2.X);
                 y = wall.p1.Y - 25;
-                width = Math.Abs(wall.p1.X - wall.p2.X);
-                height = 50;
+                
+                // for (float i = x; x <= Math.Max(wall.p1.X, wall.p2.X); i += 25)
+                // {
+                //     await _context.DrawImageAsync(
+                //         wallImage,
+                //         i,
+                //         y,
+                //         25,
+                //         25
+                //     );
+                // }
             }
             
-            await _context.DrawImageAsync(
-                wallImage,
-                x,
-                y,
-                width,
-                height
-            );
+            
+            
             
         }
         
+        
+        
+        [JSInvokable]
+        public void HandleKeyPress(string key)
+        {
+            // TODO: Once the client is connected and the handshake is complete,
+            //       invoke some controller method to send the appropriate command to the server
+
+            _controller.HandleMovement(key);
+
+            // TODO: Remove this, which is just here to show you what the 'key' string is for whatever key you pressed
+            Debug.WriteLine("key pressed: " + key);
+        }
+    
+}
+
     }
 
 
-    @* [JSInvokable] *@
-    @* public void HandleKeyPress(string key) *@
-    @* { *@
-    @*     // TODO: Once the client is connected and the handshake is complete, *@
-    @*     //       invoke some controller method to send the appropriate command to the server *@
-    @* *@
-    @* *@
-    @*     // TODO: Remove this, which is just here to show you what the 'key' string is for whatever key you pressed *@
-    @*     Debug.WriteLine("key pressed: " + key); *@
-    @*         } *@
-    @* *@
-    @*     } *@
+    
