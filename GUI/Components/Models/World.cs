@@ -2,12 +2,14 @@ namespace GUI.Components.Models;
 
 public class World
 {
-    public Dictionary<int, Player> Players { get; private set; }
+    public Dictionary<int, Player> Players { get; set; }
 
     
-    public Dictionary<int, Wall> Walls { get; private set; }
+    public Dictionary<int, Wall> Walls { get; set; }
     
-    public Dictionary<int, Powerup> Powerups { get; private set; }
+    public Dictionary<int, Powerup> Powerups { get; set; }
+
+    public int playerID { get; set; }
 
     public int Width { get; set; } = 0;
     public int Height { get; set; } = 0;
@@ -29,44 +31,34 @@ public class World
     /// <param name="oldWorld">the old world that needs to make a copy of</param>
     public World(World oldWorld)
     {
-        Players = new Dictionary<int, Player>();
-        foreach (var oldPlayer in oldWorld.Players)
-        {
-            Players[oldPlayer.Key] = new Player(oldPlayer.Value);
-        }
-
-        Walls = new Dictionary<int, Wall>();
-        foreach (var oldWall in oldWorld.Walls)
-        {
-            Walls[oldWall.Key] = new Wall(oldWall.Value);
-        }
-
-        Powerups = new Dictionary<int, Powerup>();
-        foreach (var oldPowerup in oldWorld.Powerups)
-        {
-            Powerups[oldPowerup.Key] = new Powerup(oldPowerup.Value);
-        }
-
+        Players = new Dictionary<int, Player>(oldWorld.Players);
+        Walls = new Dictionary<int, Wall>(oldWorld.Walls);
+        Powerups = new Dictionary<int, Powerup>(oldWorld.Powerups);
         Width = oldWorld.Width;
         Height = oldWorld.Height;
         HasChanged = oldWorld.HasChanged;
+        playerID = oldWorld.playerID;
     }
 
-
-    public void SetPlayerId(int ID)
+    public Point2D GetSnakeHead()
     {
-        if (Players.ContainsKey(ID))
-        {
-            Players[ID] = new Player();
-        }
-        else
-        {
-            Players.Add(ID, new Player());
-        }
-        
-        HasChanged = true;
-    
+        return this.Players[playerID].Body[^1];
     }
+
+    // public void SetPlayerId(int ID)
+    // {
+    //     if (Players.ContainsKey(ID))
+    //     {
+    //         Players[ID] = new Player();
+    //     }
+    //     else
+    //     {
+    //         Players.Add(ID, new Player());
+    //     }
+    //     
+    //     HasChanged = true;
+    //
+    // }
 
     public void AddPlayer(Player player)
     {
@@ -74,19 +66,21 @@ public class World
         {
             return;
         }
+        Players[player.ID] = player;
         
-        if (Players.ContainsKey(player.ID))
-        {
-            Players[player.ID] = player;
-        }
-        else
-        {
-            Players.Add(player.ID, player);
-        }
-
-        
+        Console.WriteLine($"Added player | ID: {player.ID}, Name: {player.Name}, Score: {player.Score}, Alive: {player.Alive}, Died: {player.Died}, Disconnected: {player.IsDisconnected}, Joined: {player.Joined}, Body Length: {player.Body?.Count ?? 0}");
         HasChanged = true;
     }
+
+        
+        
+        
+        //TODO: Debug
+        // foreach (var p in Players.Values)
+        // {
+        //     Console.WriteLine("");
+        // }
+    
 
 
     public void SetSize(int width, int height)
@@ -97,6 +91,9 @@ public class World
             
         HasChanged = true;
 
+        //TODO: Debug
+        
+        Console.WriteLine($"Width: {Width}, Height: {Height}");
     }
 
     public void AddWalls(Wall wall)
@@ -106,14 +103,11 @@ public class World
             return;
         }
 
-        if (Walls.ContainsKey(wall.ID))
-        {
-            Walls[wall.ID] = wall;
-        }
-        else
-        {
-            Walls.Add(wall.ID, wall);
-        }
+        Walls[wall.ID] = wall;
+        
+            
+        Console.WriteLine($"Added wall {wall.ID} | p1: ({wall.p1.X}, {wall.p1.Y}) | p2: ({wall.p2.X}, {wall.p2.Y})");
+        
             
         HasChanged = true;
 
@@ -127,16 +121,20 @@ public class World
             return;
         }
 
-        if (Powerups.ContainsKey(powerup.ID))
-        {
-            Powerups[powerup.ID] = powerup;
-        }
-        else
-        {
-            Powerups.Add(powerup.ID, powerup);
-        }
-
-
+        Powerups[powerup.ID] = powerup;
+        
+        // if (Powerups.ContainsKey(powerup.ID))
+        // {
+        //     
+        //     Console.WriteLine($"Added Power | ID: {powerup.ID}, Location: ({powerup.Location.X}, {powerup.Location.Y}), Died: {powerup.IsDied}");
+        // }
+        // else
+        // {
+        //     Powerups.Add(powerup.ID, powerup);
+        //     
+        //     Console.WriteLine($"Added Power | ID: {powerup.ID}, Location: ({powerup.Location.X}, {powerup.Location.Y}), Died: {powerup.IsDied}");
+        // }
+        
         HasChanged = true;
     }
 
