@@ -9,10 +9,7 @@ public class NetworkController
 {
      private NetworkConnection _client;
 
-     /// <summary>
-     /// Represent the world for each client.
-     /// </summary>
-     public World world;
+ 
 
      /// <summary>
      ///Store the current Task that working on. 
@@ -38,49 +35,44 @@ public class NetworkController
 
      public NetworkController()
      {
-          world = new World();
           _client = new NetworkConnection();
      }
 
-     public void Connect(string serverAddress, int port, string name)
+     public void Connect(string serverAddress, int port, string name, World world)
      {
           if (string.IsNullOrWhiteSpace(name))
           {
                //TODO: Handling name
                return;
           }
-
-          world = new World();
-
+          
           //Create a new connection
           _client = new NetworkConnection();
 
           _client.Connect(serverAddress, port);
 
           _client.Send(name);
-
+          
           Debug.WriteLine("Connected");
 
-          ProcessInput();
+          ProcessInput(world);
      }
 
 
 
-     private void ProcessInput()
+     private void ProcessInput(World world)
      {
-
-          HandleFirstLineInput();
           
-
-
+          HandleFirstLineInput(world);
+          
           while (IsConnected) // Reading the input from the client
           {
-               HandleInput();
+               HandleInput(world);
           }
 
      }
 
-     private void HandleFirstLineInput()
+     private void HandleFirstLineInput(World world)
      {
           string input;
           try
@@ -91,7 +83,10 @@ public class NetworkController
 
                if (Int32.TryParse(input, out int id))
                {
-                    world.SetPlayerId(id);
+                    Console.WriteLine("Check Player id");
+                    Console.WriteLine(id);
+                    world.playerID = id;
+                    //world.SetPlayerId(id);
                }
                else
                {
@@ -121,7 +116,7 @@ public class NetworkController
      }
 
 
-     private void HandleInput()
+     private void HandleInput(World world)
      {
           string line = _client.ReadLine();
 
