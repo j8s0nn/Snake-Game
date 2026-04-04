@@ -61,13 +61,19 @@ public class NetworkController
      private void ProcessInput(World world)
      {
 
-          HandleFirstLineInput(world);
-
-          while (IsConnected) // Reading the input from the client
+          try
           {
-               HandleInput(world);
-          }
+               HandleFirstLineInput(world);
 
+               while (IsConnected)
+               {
+                    HandleInput(world);
+               }
+          }
+          catch (Exception e)
+          {
+               HandleError(e);
+          }
      }
 
      private void HandleFirstLineInput(World world)
@@ -187,22 +193,22 @@ public class NetworkController
                return;
           }
 
-          if (key == "w")
+          if (key == "w" || key == "ArrowUp")
           {
                _client.Send("{\"moving\":\"up\"}");
           }
 
-          if (key == "a")
+          if (key == "a" || key == "ArrowLeft")
           {
                _client.Send("{\"moving\":\"left\"}");
           }
-          
-          if (key == "d")
+
+          if (key == "d" || key == "ArrowRight")
           {
                _client.Send("{\"moving\":\"right\"}");
           }
 
-          if (key == "s")
+          if (key == "s" || key == "ArrowDown")
           {
                _client.Send("{\"moving\":\"down\"}");
           }
