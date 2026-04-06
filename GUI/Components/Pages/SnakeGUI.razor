@@ -13,8 +13,9 @@
 
 <PageTitle> Snake </PageTitle>
 
-<img @ref="backgroundImage" id="bgImage" src="images/images/Background.png" alt="image" style="display:none;" />
+<img @ref="backgroundImage" id="bgImage" src="images/images/grass.jpg" alt="image" style="display:none;" />
 <img @ref="wallImage"  src="images/images/WallSprite.png" alt="image" style="display:none;" />
+<img @ref="powerImage"  src="images/images/powerup.png" alt="image" style="display:none;" />
 
 <div class="tool-box">
     <label >Name</label>
@@ -26,11 +27,11 @@
     <labe>Server port</labe>
     <input @bind="_port" placeholder="Server port"/>
 
-    <button @onclick="Connect">Connect</button>
-
-
-
+    <button @onclick="Connect" disabled="@_controller.IsConnected">Connect</button>
+    
     <button @onclick="Disconnect">Disconnect</button>
+    
+    <div @bind="_message" ></div>
 </div>
 
 
@@ -54,6 +55,8 @@
     private string _playerName = "a";
     private string _serverAddress = "localhost";
     private int _port = 11000;
+    private string _message;
+    
     
     private World _world = new World();
     
@@ -75,15 +78,15 @@
     private ElementReference backgroundImage;
 
     private ElementReference wallImage;
+
+    private ElementReference powerImage;
     
     private  int ViewWidth = 1000;
     private const int ViewHeight = 1000;
     
     private void Connect() // TODO: async task or not?
     {
-        Console.WriteLine("IN connect method");
         new Thread(() =>_controller.Connect(_serverAddress, _port, _playerName, _world)).Start();
-        
     }
 
 
@@ -95,7 +98,7 @@
 
     private void Disconnect()
     {
-        _controller.Disconnect();    
+        _controller.Disconnect(_world);
     }
     
     protected override async Task OnAfterRenderAsync( bool firstRender )
@@ -107,7 +110,6 @@
             await JsRuntime.InvokeAsync<object>( "initRenderJS", DotNetObjectReference.Create( this ) );           
     
             // TODO: Start the game loop
-            
             _ = GameLoop();
             
             // in the meantime, draw something to initialize the canvas
@@ -134,7 +136,7 @@
         await _context.FillRectAsync(0, 0, 1000, 1000);
 
         
-        Console.WriteLine("Check Draw", _world);
+        // Console.WriteLine("Check Draw", _world);
         World temp;
         lock (_world)
         {
@@ -176,6 +178,7 @@
                 {
                     await DrawPowerup(powerup);
                 }
+                
             }
         
         }
@@ -183,8 +186,6 @@
         {
             Console.WriteLine(e.Message);
         }
-        
-                // Draw the background:
                 
             await _context.RestoreAsync();
 
@@ -231,12 +232,35 @@
              await _context.SetFillStyleAsync(colors[player.ID % 10]);
 
              
-             ///TODO: Add name
-             await _context.SetFontAsync("Arial");
-            
-            //saawait _context.FillAsync();
-            //
-            await _context.StrokeAsync();
+             // Name and score 
+             Point2D head = player.Body[^1]; 
+             await _context.SetFontAsync("16px Arial");
+             await _context.SetFillStyleAsync("white");
+             await _context.FillTextAsync($"{player.Name}({player.Score})", head.X + 12, head.Y - 12);
+
+             // Console.WriteLine($"Player {player.ID} died: {player.Died}");
+
+             // if (player.DeathPos != null)
+             // {
+             //     // Draw some explosion
+             //     
+             //     await _context.BeginPathAsync();
+             //     
+             //     await _context.SetStrokeStyleAsync("orange");
+             //     await _context.SetLineWidthAsync(3);
+             //
+             //     await _context.ArcAsync(player.DeathPos.X, player.DeathPos.Y, 20, 0, 2 * Math.PI);
+             //     
+             //     await _context.StrokeAsync();
+             //     
+             //     Console.WriteLine("Exploded drawn");
+             //     
+             //     //reset the died 
+             //     player.DeathPos = null;
+             // }
+
+
+             await _context.StrokeAsync();
 
         }
         
@@ -247,13 +271,23 @@
             {
                 return;
             }
-            
+
+            int x = powerup.Location.X;
+            int y = powerup.Location.Y;
             
             await _context.SetLineWidthAsync( 10 ); // Set the stroke (border)
             await _context.BeginPathAsync();
             
-            await _context.SetStrokeStyleAsync( $"rgb( 255, 255, 200 )" );
-            await _context.ArcAsync( powerup.Location.X, powerup.Location.Y, 4, 0 * Math.PI, 2 * Math.PI ); 
+            // await _context.SetStrokeStyleAsync( $"rgb( 255, 255, 200 )" );
+            // await _context.ArcAsync( powerup.Location.X, powerup.Location.Y, 4, 0 * Math.PI, 2 * Math.PI ); 
+            
+            await _context.DrawImageAsync(
+                powerImage,
+                x - 14,
+                y - 14,
+                28,
+                28
+            );
             
             await _context.StrokeAsync();
         
