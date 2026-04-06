@@ -203,40 +203,66 @@
                 return;
             }
 
+           
+            
+            await _context.SetLineJoinAsync(LineJoin.Round);
+            
+            //Set the tail of the snake to be rounded
+            await _context.SetLineCapAsync(LineCap.Round);
+            
+            
             await _context.BeginPathAsync();
             
-            //Set colors of player
-            await _context.SetStrokeStyleAsync(colors[player.ID % 10]); 
-        
-            // set the width of a snake
-            await _context.SetLineWidthAsync( 10 ); 
-            
-            // Move to the tail of the snake
+            //Draw the border
+            await _context.SetLineWidthAsync(18); // thicker than main
+            await _context.SetStrokeStyleAsync("black"); // border color
+
             await _context.MoveToAsync(player.Body[0].X, player.Body[0].Y);
-        
-        
-            for (int i = 1; i < player.Body.Count() ; i++)
+
+            for (int i = 1; i < player.Body.Count(); i++)
             {
-                Point2D point = player.Body[i];
-                
+                var point = player.Body[i];
                 await _context.LineToAsync(point.X, point.Y);
             }
 
-            // await _context.StrokeAsync();
-            //Draw head of the snake
-             Point2D playerHead = player.Body[^1];
-             await _context.SetLineWidthAsync( 10 );
-             await _context.ArcAsync( playerHead.X, playerHead.Y, 4, 0 * Math.PI, 2 * Math.PI );
+            await _context.StrokeAsync();
             
-             //Fill the head 
-             await _context.SetFillStyleAsync(colors[player.ID % 10]);
+            
+            await _context.BeginPathAsync();
 
+            await _context.SetLineWidthAsync(14); // thinner than border
+            await _context.SetStrokeStyleAsync(colors[player.ID % 10]);
+
+            await _context.MoveToAsync(player.Body[0].X, player.Body[0].Y);
+
+            for (int i = 1; i < player.Body.Count(); i++)
+            {
+                var point = player.Body[i];
+                await _context.LineToAsync(point.X, point.Y);
+            }
+
+            await _context.StrokeAsync();
+            
+            
+            Point2D head = player.Body[^1];
+            
+            
+            // Draw border
+            await _context.BeginPathAsync();
+            await _context.ArcAsync(head.X, head.Y, 15, 0, 2 * Math.PI);
+            await _context.SetFillStyleAsync("black"); 
+            await _context.FillAsync();
+            
+            // Draw inner head
+            await _context.BeginPathAsync();
+            await _context.ArcAsync(head.X, head.Y, 6, 0, 2 * Math.PI); 
+            await _context.SetFillStyleAsync(colors[player.ID % 10]);
+            await _context.FillAsync();
              
              // Name and score 
-             Point2D head = player.Body[^1]; 
-             await _context.SetFontAsync("16px Arial");
+             await _context.SetFontAsync("bold 14px Arial");
              await _context.SetFillStyleAsync("white");
-             await _context.FillTextAsync($"{player.Name}({player.Score})", head.X + 12, head.Y - 12);
+             await _context.FillTextAsync($"{player.Name}(Score:{player.Score})", head.X + 10, head.Y - 18);
 
              // Console.WriteLine($"Player {player.ID} died: {player.Died}");
 
