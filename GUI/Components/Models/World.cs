@@ -8,6 +8,8 @@ public class World
     public Dictionary<int, Wall> Walls { get; set; }
     
     public Dictionary<int, Powerup> Powerups { get; set; }
+    
+    public Dictionary<int, Point2D> DeathPositions { get; set; }
 
     public int playerID { get; set; }
 
@@ -15,12 +17,14 @@ public class World
     public int Height { get; set; } = 0;
 
     public bool HasChanged { get; set; } = false;
-
+    
     public World()
     {
         Players = new Dictionary<int, Player>();
         Walls = new Dictionary<int, Wall>();
         Powerups = new Dictionary<int, Powerup>();
+        DeathPositions = new Dictionary<int, Point2D>();
+        
         HasChanged = false;
     }
 
@@ -34,10 +38,12 @@ public class World
         Players = new Dictionary<int, Player>(oldWorld.Players);
         Walls = new Dictionary<int, Wall>(oldWorld.Walls);
         Powerups = new Dictionary<int, Powerup>(oldWorld.Powerups);
+        DeathPositions = new Dictionary<int, Point2D>(oldWorld.DeathPositions);
         Width = oldWorld.Width;
         Height = oldWorld.Height;
         HasChanged = oldWorld.HasChanged;
         playerID = oldWorld.playerID;
+       
     }
 
     public Point2D GetSnakeHead()
@@ -68,19 +74,16 @@ public class World
         }
         Players[player.ID] = player;
         
-        Console.WriteLine($"Added player | ID: {player.ID}, Name: {player.Name}, Score: {player.Score}, Alive: {player.Alive}, Died: {player.Died}, Disconnected: {player.IsDisconnected}, Joined: {player.Joined}, Body Length: {player.Body?.Count ?? 0}");
+        // Console.WriteLine($"Added player | ID: {player.ID}, Name: {player.Name}, Score: {player.Score}, Alive: {player.Alive}, Died: {player.Died}, Disconnected: {player.IsDisconnected}, Joined: {player.Joined}, Body Length: {player.Body?.Count ?? 0}");
         HasChanged = true;
     }
 
-        
-        
-        
-        //TODO: Debug
-        // foreach (var p in Players.Values)
-        // {
-        //     Console.WriteLine("");
-        // }
-    
+
+    public void RemovePlayer()
+    {
+        Players.Remove(playerID);
+    }
+
 
 
     public void SetSize(int width, int height)
@@ -91,9 +94,9 @@ public class World
             
         HasChanged = true;
 
-        //TODO: Debug
+      
         
-        Console.WriteLine($"Width: {Width}, Height: {Height}");
+        // Console.WriteLine($"Width: {Width}, Height: {Height}");
     }
 
     public void AddWalls(Wall wall)
@@ -106,7 +109,7 @@ public class World
         Walls[wall.ID] = wall;
         
             
-        Console.WriteLine($"Added wall {wall.ID} | p1: ({wall.p1.X}, {wall.p1.Y}) | p2: ({wall.p2.X}, {wall.p2.Y})");
+        // Console.WriteLine($"Added wall {wall.ID} | p1: ({wall.p1.X}, {wall.p1.Y}) | p2: ({wall.p2.X}, {wall.p2.Y})");
         
             
         HasChanged = true;
@@ -123,22 +126,27 @@ public class World
 
         Powerups[powerup.ID] = powerup;
         
-        // if (Powerups.ContainsKey(powerup.ID))
-        // {
-        //     
-        //     Console.WriteLine($"Added Power | ID: {powerup.ID}, Location: ({powerup.Location.X}, {powerup.Location.Y}), Died: {powerup.IsDied}");
-        // }
-        // else
-        // {
-        //     Powerups.Add(powerup.ID, powerup);
-        //     
-        //     Console.WriteLine($"Added Power | ID: {powerup.ID}, Location: ({powerup.Location.X}, {powerup.Location.Y}), Died: {powerup.IsDied}");
-        // }
+        
         
         HasChanged = true;
     }
 
 
+    public void AddDeathPosition(int playerId, Point2D deathPosition)
+    {
+        if (deathPosition == null)
+        {
+            return;
+        }
+
+        DeathPositions[playerId] = deathPosition;
+        HasChanged = true;
+    }
+
+    public void RemoveDeathPosition(int playerId)
+    {
+        DeathPositions.Remove(playerId);
+    }
 
 
 }

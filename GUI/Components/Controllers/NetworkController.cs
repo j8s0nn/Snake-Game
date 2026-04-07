@@ -50,9 +50,7 @@ public class NetworkController
           _client.Connect(serverAddress, port);
 
           _client.Send(name);
-
-          Debug.WriteLine("Connected");
-
+          
           ProcessInput(world);
      }
 
@@ -87,8 +85,8 @@ public class NetworkController
 
                if (Int32.TryParse(input, out int id))
                {
-                    Console.WriteLine("Check Player id");
-                    Console.WriteLine(id);
+                    // Console.WriteLine("Check Player id");
+                    // Console.WriteLine(id);
                     world.playerID = id;
                     //world.SetPlayerId(id);
                }
@@ -124,7 +122,7 @@ public class NetworkController
      {
           string line = _client.ReadLine();
 
-          Console.WriteLine("Current data: " + line);
+          // Console.WriteLine("Current data: " + line);
 
           try
           {
@@ -150,10 +148,33 @@ public class NetworkController
                }
                else // Player
                {
+                    
+                    
                     Player? player = JsonSerializer.Deserialize<Player>(line);
+                    
+                    
+                    
                     if (player != null)
                     {
-                         world.AddPlayer(player);
+                         // Console.WriteLine($"Player {player.ID} died: {player.Died} alive: {player.Alive}" );
+                         if (player.Died)
+                         {
+                              //Add the snake head at the starting explosion
+                              world.AddDeathPosition(player.ID,player.Body[^1]); 
+                              Console.WriteLine("Added death position");
+                         }
+                         else
+                         {
+                              //Remove the death position when player is alive
+                              world.RemoveDeathPosition(player.ID);
+                              world.AddPlayer(player);
+                         }
+
+                         
+                              
+
+                         Console.WriteLine($"Player {player.ID}  Died: {player.Died}" );
+
                     }
 
                }
@@ -174,14 +195,15 @@ public class NetworkController
 
           _client?.Disconnect();
 
-          // client = null;
+          _client = null;
 
      }
 
 
-     public void Disconnect()
+     public void Disconnect(World world)
      {
           _client?.Disconnect();
+          world.RemovePlayer();
      }
 
 
