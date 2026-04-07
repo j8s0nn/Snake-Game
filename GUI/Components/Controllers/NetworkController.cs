@@ -157,21 +157,17 @@ public class NetworkController
                     if (player != null)
                     {
                          // Console.WriteLine($"Player {player.ID} died: {player.Died} alive: {player.Alive}" );
-                         if (player.Died)
+                         if (player.Died && !player.WasDead)
                          {
-                              //Add the snake head at the starting explosion
-                              world.AddDeathPosition(player.ID,player.Body[^1]); 
+                              world.AddDeathPosition(player.ID, player.Body[^1]);
+                              player.WasDead = true;
                               Console.WriteLine("Added death position");
                          }
-                         else
-                         {
-                              //Remove the death position when player is alive
-                              world.RemoveDeathPosition(player.ID);
-                              world.AddPlayer(player);
-                         }
 
+                         world.AddPlayer(player);
                          
-                              
+                         
+
 
                          Console.WriteLine($"Player {player.ID}  Died: {player.Died}" );
 

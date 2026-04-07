@@ -176,7 +176,13 @@
                 foreach (Point2D deathPosition in temp.DeathPositions.Values)
                 {
                     await DrawExplosion(deathPosition);
+                   
                 }
+                
+                //Clear the death position after drawing
+                _world.DeathPositions.Clear();
+                
+                
             }
         }
         catch (Exception e)

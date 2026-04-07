@@ -23,6 +23,8 @@ public class Player
 
     [JsonPropertyName("join")] public bool Joined { get; set; }
 
+    public bool WasDead { get; set; } = false;
+
 
     public Player()
     {
@@ -47,15 +49,11 @@ public class Player
         Alive = other.Alive;
         
         //Make a copy
-        Body = new List<Point2D>();
-        foreach (var p in other.Body)
-        {
-            Body.Add(new Point2D(p.X, p.Y));
-        }
-
+        Body = new List<Point2D>(other.Body);
+        
         //Make a copy 
         Direction = new Point2D(other.Direction.X, other.Direction.Y);
-
+        
     }
     
 
