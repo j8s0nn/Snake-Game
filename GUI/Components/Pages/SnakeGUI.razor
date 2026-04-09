@@ -13,27 +13,42 @@
 
 <PageTitle> Snake </PageTitle>
 
-<img @ref="backgroundImage" id="bgImage" src="images/images/grass.jpg" alt="image" style="display:none;" />
+<img @ref="backgroundImage" id="bgImage" src="images/images/Background.png" alt="image" style="display:none;" />
 <img @ref="wallImage"  src="images/images/WallSprite.png" alt="image" style="display:none;" />
 <img @ref="powerImage"  src="images/images/powerup.png" alt="image" style="display:none;" />
 <img @ref="explosionImage"  src="images/images/explosion.png" alt="image" style="display:none;" />
 
 <div class="tool-box">
     <label >Name</label>
-    <input @bind="_playerName" maxlength="16"  placeholder="Type your name here"/>
+    <input @bind="_playerName" maxlength="16"  placeholder="Type your name here" disabled="@_controller.IsConnected"/>
 
     <labe>Server address</labe>
-    <input @bind="_serverAddress" placeholder="Server address"/>
+    <input @bind="_serverAddress" placeholder="Server address" disabled="@_controller.IsConnected"/>
 
     <labe>Server port</labe>
-    <input @bind="_port" placeholder="Server port"/>
+    <input @bind="_port" placeholder="Server port" disabled="@_controller.IsConnected"/>
 
     <button @onclick="Connect" disabled="@_controller.IsConnected">Connect</button>
     
     <button @onclick="Disconnect">Disconnect</button>
     
-    <div @bind="_message" ></div>
+    
 </div>
+
+
+@if (_controller.ErrorMessage != string.Empty)
+{
+    <div class="popup-overlay">
+        <div class="popup-box">
+            <p>
+                @_controller.ErrorMessage
+            </p>
+            <button class="close-button" @onclick="() => _controller.ErrorMessage = string.Empty">
+                X
+            </button>
+        </div>
+    </div>
+}
 
 
 <div id="snakeCanvas" style="position: fixed; width: 100%; height: 100%">
@@ -49,11 +64,11 @@
 
     private NetworkController _controller = new NetworkController();
 
-    private string _playerName = "a";
+    private string _playerName = string.Empty;
     private string _serverAddress = "localhost";
     private int _port = 11000;
     private string _message;
-
+    
 
     private World _world = new World();
 
@@ -246,13 +261,9 @@
         }
 
         await _context.StrokeAsync();
-
-
-
+        
         Point2D head = player.Body[^1];
-
-
-
+        
         await _context.BeginPathAsync();
         await _context.ArcAsync(head.X, head.Y, 7, 0, 2 * Math.PI);
 
@@ -299,9 +310,9 @@
 
         //Draw the border of the powerup
         await _context.BeginPathAsync();
-        await _context.ArcAsync(x, y, 7, 0, 2 * Math.PI);
+        await _context.ArcAsync(x, y, 7.5, 0, 2 * Math.PI);
 
-        await _context.SetLineWidthAsync(2);
+        await _context.SetLineWidthAsync(1);
         await _context.SetStrokeStyleAsync("black");
         await _context.StrokeAsync();
 
@@ -380,5 +391,46 @@
 
 }
 
+
+<style>
+    .close-button {
+        background: #f9fafb;
+        position: absolute;
+        top: 1px;
+        right: 1px;
+        border:none;
+        color: #ef4444;
+        cursor: pointer;
+        border-radius: 10px;
+    }
+
+    .popup-box {
+        width: auto;
+        height: auto;
+        color: #1f2937;
+        position: relative;
+        background: #f9fafb;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+
+        border: 1px solid #e5e7eb;
+    }
+
+    .popup-overlay {
+        background: rgba(0, 0, 0, 0.35);
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        z-index: 10000; /*Top of everything*/
+    }
+
+</style>
 
     

@@ -9,26 +9,10 @@ public class NetworkController
 {
      private NetworkConnection _client;
 
-     /// <summary>
-     ///Store the current Task that working on. 
-     /// </summary>
-     // private Task? _task;
-     //TODO: Remove after. Task is like the promise, a task(a method) gonna be executed (be run and finish in the future) in the future . 
-     //TODO: A task can be in background operation like calling Task.Run on the void method like handling input or processing the data. 
-     //TODO: When dealing with task, be aware of `await`. Without await, when a Task start, it immediately return a Task without caring about the result of the method being executed in Task. This mean that we will no longer receive the result by the method running inside Task.
-     //TODO: Task is just the placeholder, not store the actual result. To get the result, we have to attach `await` to a Task then assign it to a variable i.e., `var a = await t;`. This mean that wait until the Task is completed then return the result. Note that the method inside Task need to be async. 
-
-     //TODO: Async modifier is used to specify that the method is asynchrnous (they run not in the order that we're expected)
-     //TODO: Await operator suspends evaluation of the async method until the asynchronous operation completes
-     //TODO: If you `await` for a method, that method must be async. The method that contains `await` must return a Task or Task<t>. Task<T> is used when we want to return a result of the method called. i.e., when reading a file, we want to return the file conent of the file, then we use Task<string>.
-     //TODO: The method that is marked await must be async meaning that they have to return a Task or Task<T> (cannot be void, or any normal return type.)
-     //TODO: A method returns Task does not require await to run. DO NOT think of the Task method like void method because there is no way to know when the void method will finish. However, with Task, it will return a Task to mark it as completed. 
-     //TODO: Not every async method requires to return a Task. Async usually go with void but not with another normal types like string or double or int. 
-     //TODO: Async void are usually used for event handler (where we don't need to be awaited by the caller).
-
-
+     
      public bool IsConnected => _client != null && _client.IsConnected;
 
+     public string ErrorMessage { get; set; } = string.Empty;
 
 
      public NetworkController()
@@ -40,7 +24,19 @@ public class NetworkController
      {
           if (string.IsNullOrWhiteSpace(name))
           {
-               //TODO: Handling name
+               ErrorMessage = "Please enter a name (Less than 16 characters)";
+               return;
+          }
+
+          if (serverAddress != "localhost")
+          {
+               ErrorMessage = "Invalid server address";
+               return;
+          }
+
+          if (port != 11000)
+          {
+               ErrorMessage = "Invalid port";
                return;
           }
 
@@ -85,14 +81,10 @@ public class NetworkController
 
                if (Int32.TryParse(input, out int id))
                {
-                    // Console.WriteLine("Check Player id");
-                    // Console.WriteLine(id);
                     world.playerID = id;
-                    //world.SetPlayerId(id);
                }
                else
                {
-                    Console.WriteLine("Cannot parse ID");
                     _client.Disconnect();
                }
 
@@ -106,7 +98,6 @@ public class NetworkController
                }
                else
                {
-                    Console.WriteLine("Cannot parse size");
                     _client.Disconnect();
                }
 
@@ -121,8 +112,7 @@ public class NetworkController
      private void HandleInput(World world)
      {
           string line = _client.ReadLine();
-
-          // Console.WriteLine("Current data: " + line);
+          
 
           try
           {
@@ -156,7 +146,6 @@ public class NetworkController
                     
                     if (player != null)
                     {
-                         // Console.WriteLine($"Player {player.ID} died: {player.Died} alive: {player.Alive}" );
                          if (player.Died && !player.WasDead)
                          {
                               world.AddDeathPosition(player.ID, player.Body[^1]);
@@ -166,11 +155,6 @@ public class NetworkController
 
                          world.AddPlayer(player);
                          
-                         
-
-
-                         Console.WriteLine($"Player {player.ID}  Died: {player.Died}" );
-
                     }
 
                }
@@ -186,9 +170,6 @@ public class NetworkController
 
      private void HandleError(Exception e)
      {
-          //TODO: Another way to handle error
-          Console.WriteLine(e.Message);
-
           _client?.Disconnect();
 
           _client = null;
