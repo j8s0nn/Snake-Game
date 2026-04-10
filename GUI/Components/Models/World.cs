@@ -1,23 +1,71 @@
+// <summary>
+//   <para>
+//     <authors> Quoc Thinh Le </authors>
+//     <date> 4/10/2026 </date>
+//       Represents the world (including players, powerup, and walls) in the snake game
+//   </para>
+// </summary>
+
+
 namespace GUI.Components.Models;
 
+
+
+/// <summary>
+/// Represents the complete state of the game world.
+/// It contains all entities such as players, walls, power-ups,
+/// and explosion effects used for rendering.
+/// </summary>
 public class World
 {
+    
+    /// <summary>
+    /// Gets or sets the collection of players in the world,
+    /// indexed by their unique ID.
+    /// </summary>
     public Dictionary<int, Player> Players { get; set; }
 
-    
+    /// <summary>
+    /// Gets or sets the collection of walls in the world,
+    /// indexed by their unique ID.
+    /// </summary>
     public Dictionary<int, Wall> Walls { get; set; }
     
+    
+    /// <summary>
+    /// Gets or sets the collection of power-ups in the world,
+    /// indexed by their unique ID.
+    /// </summary>
     public Dictionary<int, Powerup> Powerups { get; set; }
     
+    
+    /// <summary>
+    /// Gets or sets the collection of death positions,
+    /// indexed by player ID. These are used to render explosion effects.
+    /// </summary>
     public Dictionary<int, Point2D> DeathPositions { get; set; }
 
+    public bool HasChanged { get; set; } =  false;
+
+    /// <summary>
+    /// Gets or sets the ID of the current player.
+    /// </summary>
     public int playerID { get; set; }
 
+    /// <summary>
+    /// Gets or sets the width of the world.
+    /// </summary>
     public int Width { get; set; } = 0;
+    
+    /// <summary>
+    /// Gets or sets the height of the world.
+    /// </summary>
     public int Height { get; set; } = 0;
 
-    public bool HasChanged { get; set; } = false;
     
+    /// <summary>
+    /// Initialize a default world.
+    /// </summary>
     public World()
     {
         Players = new Dictionary<int, Player>();
@@ -25,12 +73,13 @@ public class World
         Powerups = new Dictionary<int, Powerup>();
         DeathPositions = new Dictionary<int, Point2D>();
         
-        HasChanged = false;
+        
+       
     }
 
     
     /// <summary>
-    /// This constructor is used for creating a copy of a world
+    /// Initialize a world object as a copy of an existing world
     /// </summary>
     /// <param name="oldWorld">the old world that needs to make a copy of</param>
     public World(World oldWorld)
@@ -41,31 +90,23 @@ public class World
         DeathPositions = new Dictionary<int, Point2D>(oldWorld.DeathPositions);
         Width = oldWorld.Width;
         Height = oldWorld.Height;
-        HasChanged = oldWorld.HasChanged;
         playerID = oldWorld.playerID;
-       
+       HasChanged = true;
     }
 
+    /// <summary>
+    /// Get the position of a player's head.
+    /// </summary>
+    /// <returns></returns>
     public Point2D GetSnakeHead()
     {
         return this.Players[playerID].Body[^1];
     }
-
-    // public void SetPlayerId(int ID)
-    // {
-    //     if (Players.ContainsKey(ID))
-    //     {
-    //         Players[ID] = new Player();
-    //     }
-    //     else
-    //     {
-    //         Players.Add(ID, new Player());
-    //     }
-    //     
-    //     HasChanged = true;
-    //
-    // }
-
+    
+    /// <summary>
+    /// Adds or updates a player in the world.
+    /// </summary>
+    /// <param name="player">The player to add or update.</param>
     public void AddPlayer(Player player)
     {
         if (player == null)
@@ -73,32 +114,35 @@ public class World
             return;
         }
         Players[player.ID] = player;
-        
-        // Console.WriteLine($"Added player | ID: {player.ID}, Name: {player.Name}, Score: {player.Score}, Alive: {player.Alive}, Died: {player.Died}, Disconnected: {player.IsDisconnected}, Joined: {player.Joined}, Body Length: {player.Body?.Count ?? 0}");
         HasChanged = true;
     }
 
-
+    /// <summary>
+    /// Removes the current player from the world.
+    /// </summary>
     public void RemovePlayer()
     {
         Players.Remove(playerID);
     }
 
 
-
+    /// <summary>
+    /// Sets the size of the world.
+    /// </summary>
+    /// <param name="width">The width of the world.</param>
+    /// <param name="height">The height of the world.</param>
     public void SetSize(int width, int height)
     {
         
         Width = width;
         Height = height;
-            
-        HasChanged = true;
-
-      
         
-        // Console.WriteLine($"Width: {Width}, Height: {Height}");
     }
 
+    /// <summary>
+    /// Adds or updates a wall in the world.
+    /// </summary>
+    /// <param name="wall">The wall to add or update.</param>
     public void AddWalls(Wall wall)
     {
         if (wall == null)
@@ -107,31 +151,32 @@ public class World
         }
 
         Walls[wall.ID] = wall;
-        
-            
-        // Console.WriteLine($"Added wall {wall.ID} | p1: ({wall.p1.X}, {wall.p1.Y}) | p2: ({wall.p2.X}, {wall.p2.Y})");
-        
-            
         HasChanged = true;
-
-
+        
     }
-
+    
+    /// <summary>
+    /// Adds or updates a power-up in the world.
+    /// </summary>
+    /// <param name="powerup">The power-up to add or update.</param>
     public void AddPowerup(Powerup powerup)
     {
         if (powerup == null)
         {
             return;
         }
-
+        
         Powerups[powerup.ID] = powerup;
-        
-        
-        
         HasChanged = true;
+        
     }
 
 
+    /// <summary>
+    /// Adds a death position for a player to render an explosion effect.
+    /// </summary>
+    /// <param name="playerId">The ID of the player who died.</param>
+    /// <param name="deathPosition">The position where the player died.</param>
     public void AddDeathPosition(int playerId, Point2D deathPosition)
     {
         if (deathPosition == null)
@@ -142,11 +187,6 @@ public class World
         DeathPositions[playerId] = deathPosition;
         HasChanged = true;
     }
-
-    public void RemoveDeathPosition(int playerId)
-    {
-        DeathPositions.Remove(playerId);
-    }
-
+    
 
 }
