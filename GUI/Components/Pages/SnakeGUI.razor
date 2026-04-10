@@ -58,20 +58,55 @@
 
 @code
 {
+    /// <summary>
+    /// Reference to the canvas component used for rendering the game.
+    /// </summary>
     private BECanvasComponent? _canvasReference;
+    
+    /// <summary>
+    /// Reference to the canvas component used for drawing the game.
+    /// </summary>
     private Canvas2DContext? _context;
+    
+    
     private IJSObjectReference? _jsModule;
 
+    
+    /// <summary>
+    /// Handles all networking logic, including connecting to the server,
+    /// sending input, and receiving game state updates.
+    /// </summary>
     private NetworkController _controller = new NetworkController();
 
-    private string _playerName = string.Empty;
-    private string _serverAddress = "localhost";
-    private int _port = 11000;
-    private string _message;
     
-
+    
+    /// <summary>
+    /// The name of the player entered by the user.
+    /// </summary>
+    private string _playerName = string.Empty;
+    
+    /// <summary>
+    /// The server address used to connect to the game.
+    /// Defaults to localhost.
+    /// </summary>
+    private string _serverAddress = "localhost";
+    
+    
+    /// <summary>
+    /// The port number used to connect to the server. Default port is 11000.
+    /// </summary>
+    private int _port = 11000;
+    
+    /// <summary>
+    /// Represents the current state of the game world,including players, walls and power-ups.
+    /// </summary>
     private World _world = new World();
 
+    
+    /// <summary>
+    /// A predefined set of colors used to render different players.
+    /// Each player is assigned a color based on their ID.
+    /// </summary>
     private string[] colors =
     {
         "red",
@@ -87,22 +122,48 @@
     };
 
 
+    /// <summary>
+    /// Reference to the background image used to render the game world.
+    /// </summary>
     private ElementReference backgroundImage;
 
+    /// <summary>
+    /// Reference to the wall sprite image used for rendering walls.
+    /// </summary>
     private ElementReference wallImage;
 
+    
+    /// <summary>
+    /// Reference to the power-up image used for rendering collectibles.
+    /// </summary>
     private ElementReference powerImage;
 
+    /// <summary>
+    /// Reference to the explosion image used when a player dies.
+    /// </summary>
     private ElementReference explosionImage;
 
-    private int ViewWidth = 1000;
+    /// <summary>
+    /// The width of the viewpoint of a player.
+    /// </summary>
+    private const int ViewWidth = 1000;
+    
+    /// <summary>
+    /// The height of the viewpoint of a player.
+    /// </summary>
     private const int ViewHeight = 1000;
 
+    /// <summary>
+    /// Initiates a connection to the game server on a separate thread.
+    /// </summary>
     private void Connect()
     {
         new Thread(() => _controller.Connect(_serverAddress, _port, _playerName, _world)).Start();
     }
 
+    /// <summary>
+    /// Disconnects from the game server and clears the current game state.
+    /// </summary>
     private void Disconnect()
     {
         _controller.Disconnect(_world);
@@ -116,17 +177,14 @@
             _context = await _canvasReference.CreateCanvas2DAsync();
             await JsRuntime.InvokeAsync<object>("initRenderJS", DotNetObjectReference.Create(this));
             
-            // TODO: Start the game loop
             _ = GameLoop();
-
-            // in the meantime, draw something to initialize the canvas
-            // you may want to remove this after you are drawing something
-            //await _context.SetFillStyleAsync( "lightblue" );
-            //await _context.FillRectAsync( 0, 0, 1000, 1000 );
+            
         }
     }
 
-    //
+    /// <summary>
+    /// Runs the main game loop, continuously rendering the game.
+    /// </summary>
     private async Task GameLoop()
     {
         while (true)
@@ -136,7 +194,12 @@
         }
     }
 
-    private async Task DrawFrame() // Dealing with the old world
+    /// <summary>
+    /// Renders a single frame of the game world.
+    /// This includes clearing the canvas, applying camera transforms,
+    /// and drawing all game entities (background, walls, players, power-ups, and explosions).
+    /// </summary>
+    private async Task DrawFrame() 
     {
 
 
@@ -144,9 +207,7 @@
 
         await _context.BeginBatchAsync();
         await _context.FillRectAsync(0, 0, 1000, 1000);
-
-
-        // Console.WriteLine("Check Draw", _world);
+        
         World temp;
         lock (_world)
         {
@@ -185,7 +246,9 @@
 
                 foreach (Powerup powerup in temp.Powerups.Values)
                 {
+                    
                     await DrawPowerup(powerup);
+                    
                 }
 
                 foreach (Point2D deathPosition in temp.DeathPositions.Values)
@@ -202,7 +265,8 @@
         }
         catch (Exception e)
         {
-            Console.WriteLine(e.Message);
+            // //TODO: How to handlew
+            // Console.WriteLine(e.Message);
         }
 
         await _context.RestoreAsync();
@@ -213,76 +277,82 @@
 
     }
 
-
+    /// <summary>
+    /// Draws a player snake including body, border, head, and UI label. The snake is 10-pixel wide.
+    /// </summary>
+    /// <param name="player">The player to render.</param>
     private async Task DrawPlayer(Player player)
     {
-        
-        if (_context is null || player.Body.Count == 0 || !player.Alive)
+
+        if (!player.IsDisconnected)
         {
-            return;
+            await _context.SetLineJoinAsync(LineJoin.Round);
+
+            //Set the tail of the snake to be rounded
+            await _context.SetLineCapAsync(LineCap.Round);
+
+
+            await _context.BeginPathAsync();
+
+            //Draw the border
+            await _context.SetLineWidthAsync(13);
+
+            await _context.SetStrokeStyleAsync("black"); // border color
+
+            await _context.MoveToAsync(player.Body[0].X, player.Body[0].Y);
+
+            for (int i = 1; i < player.Body.Count(); i++)
+            {
+                var point = player.Body[i];
+                await _context.LineToAsync(point.X, point.Y);
+            }
+
+            await _context.StrokeAsync();
+
+
+            await _context.BeginPathAsync();
+
+            await _context.SetLineWidthAsync(10);
+            await _context.SetStrokeStyleAsync(colors[player.ID % 10]);
+
+            await _context.MoveToAsync(player.Body[0].X, player.Body[0].Y);
+
+            for (int i = 1; i < player.Body.Count(); i++)
+            {
+                var point = player.Body[i];
+                await _context.LineToAsync(point.X, point.Y);
+            }
+
+            await _context.StrokeAsync();
+        
+            Point2D head = player.Body[^1];
+        
+            await _context.BeginPathAsync();
+            await _context.ArcAsync(head.X, head.Y, 8, 0, 2 * Math.PI);
+
+            // Border
+            await _context.SetLineWidthAsync(3);
+            await _context.SetStrokeStyleAsync("black");
+            await _context.StrokeAsync();
+
+            // Fill
+            await _context.SetFillStyleAsync(colors[player.ID % 10]);
+            await _context.FillAsync();
+
+            // Name and score 
+            await _context.SetFontAsync("bold 14px Arial");
+            await _context.SetFillStyleAsync("white");
+            await _context.FillTextAsync($"{player.Name}(Score:{player.Score})", head.X + 10, head.Y - 18);
         }
 
         
-        await _context.SetLineJoinAsync(LineJoin.Round);
-
-        //Set the tail of the snake to be rounded
-        await _context.SetLineCapAsync(LineCap.Round);
-
-
-        await _context.BeginPathAsync();
-
-        //Draw the border
-        await _context.SetLineWidthAsync(13);
-
-        await _context.SetStrokeStyleAsync("black"); // border color
-
-        await _context.MoveToAsync(player.Body[0].X, player.Body[0].Y);
-
-        for (int i = 1; i < player.Body.Count(); i++)
-        {
-            var point = player.Body[i];
-            await _context.LineToAsync(point.X, point.Y);
-        }
-
-        await _context.StrokeAsync();
-
-
-        await _context.BeginPathAsync();
-
-        await _context.SetLineWidthAsync(10);
-        await _context.SetStrokeStyleAsync(colors[player.ID % 10]);
-
-        await _context.MoveToAsync(player.Body[0].X, player.Body[0].Y);
-
-        for (int i = 1; i < player.Body.Count(); i++)
-        {
-            var point = player.Body[i];
-            await _context.LineToAsync(point.X, point.Y);
-        }
-
-        await _context.StrokeAsync();
-        
-        Point2D head = player.Body[^1];
-        
-        await _context.BeginPathAsync();
-        await _context.ArcAsync(head.X, head.Y, 7, 0, 2 * Math.PI);
-
-        // Border
-        await _context.SetLineWidthAsync(3);
-        await _context.SetStrokeStyleAsync("black");
-        await _context.StrokeAsync();
-
-        // Fill
-        await _context.SetFillStyleAsync(colors[player.ID % 10]);
-        await _context.FillAsync();
-
-        // Name and score 
-        await _context.SetFontAsync("bold 14px Arial");
-        await _context.SetFillStyleAsync("white");
-        await _context.FillTextAsync($"{player.Name}(Score:{player.Score})", head.X + 10, head.Y - 18);
     }
 
 
+    /// <summary>
+    /// Draws an explosion animation at a death position.
+    /// </summary>
+    /// <param name="deathPosition">The position where the player died.</param>
     private async Task DrawExplosion(Point2D deathPosition)
     {
         
@@ -298,19 +368,24 @@
     }
 
 
+    /// <summary>
+    /// Draws a power-up at its location. The size of a power-up is 16x16 pixels.
+    /// </summary>
+    /// <param name="powerup">The power-up to render.</param>
     private async Task DrawPowerup(Powerup powerup)
     {
         if (_context is null || powerup.IsDied)
         {
             return;
         }
-
+        
+        
         int x = powerup.Location.X;
         int y = powerup.Location.Y;
 
         //Draw the border of the powerup
         await _context.BeginPathAsync();
-        await _context.ArcAsync(x, y, 7.5, 0, 2 * Math.PI);
+        await _context.ArcAsync(x, y, 8, 0, 2 * Math.PI);
 
         await _context.SetLineWidthAsync(1);
         await _context.SetStrokeStyleAsync("black");
@@ -318,16 +393,21 @@
 
         await _context.DrawImageAsync(
             powerImage,
-            x - 10,
-            y - 10,
-            20,
-            20
+            x - 8,
+            y - 8,
+            16,
+            16
         );
 
         await _context.StrokeAsync();
 
     }
 
+    
+    /// <summary>
+    /// Draws a wall segment between two endpoints. Wall is 50x50 pixels.
+    /// </summary>
+    /// <param name="wall">The wall object containing two endpoints.</param>
     private async Task DrawWall(Wall wall)
     {
         if (_context is null)
@@ -378,13 +458,14 @@
     }
 
 
-
+    /// <summary>
+    /// Handles keyboard input and forwards it to the network controller.
+    /// </summary>
+    /// <param name="key">The key pressed by the user.</param>
     [JSInvokable]
     public void HandleKeyPress(string key)
     {
-
         _controller.HandleMovement(key);
-
     }
 
 
