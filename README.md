@@ -1,6 +1,5 @@
-# Snake-Game
 
-# Snake Game (Multiplayer)
+# Snake Game 
 
 
 ## Overview
@@ -17,5 +16,6 @@ A real-time multiplayer Snake game built with **C#** and **Blazor**. Players con
 - WASD / Arrow key controls
 
 ## Author
-Written by **Quoc Thinh Le**  
-Network connection support by **Rister Wu**
+- Written by **Quoc Thinh Le**  
+- Network connection support by **Rister Wu**
+- All materials are based on CS3500 at University of Utah.
