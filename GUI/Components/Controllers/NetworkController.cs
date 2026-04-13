@@ -15,6 +15,12 @@ using System.Text.Json;
 namespace GUI.Components.Controllers;
 
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using MySql.Data.MySqlClient;
+
 /// <summary>
 /// Manages the client-side network connection, including sending player input
 /// and receiving game state updates from the server.
@@ -46,7 +52,21 @@ public class NetworkController
      /// </summary>
      public string ErrorMessage { get; set; } = string.Empty;
 
-
+     private int gameID;
+     
+     private DateTime startTime;
+     
+     private DateTime endTime;
+     
+     
+     //TODO: privacy
+     public static readonly string connectionString =
+          "server=atr.eng.utah.edu;" +
+          "database=u1579771;" +
+          "uid=u1579771;" +
+          "password=0974107730";
+     
+     
      /// <summary>
      /// Initialize a new network connection (client) used for reading inputs from the server.
      /// </summary>
@@ -86,8 +106,13 @@ public class NetworkController
           _client = new NetworkConnection();
 
           _client.Connect(serverAddress, port);
-
+          
+          startTime = DateTime.Now;
+          
           _client.Send(name);
+          
+          //After succesfully connect to the game, 
+          UpdateStartTime();
           
           ProcessInput(world);
      }
@@ -138,7 +163,8 @@ public class NetworkController
                {
                     _client.Disconnect();
                }
-
+               
+               
                //Read the size of the world
                input = _client.ReadLine();
 
@@ -150,6 +176,8 @@ public class NetworkController
                {
                     _client.Disconnect();
                }
+     
+               
 
           }
           catch (Exception e) 
@@ -166,7 +194,6 @@ public class NetworkController
      private void HandleInput(World world)
      {
           string line = _client.ReadLine();
-          
           
           
           try
@@ -242,8 +269,12 @@ public class NetworkController
      {
           _client?.Disconnect();
           
-          // _client = null;
+          endTime = DateTime.Now;
+
+
+          UpdateEndTime();
           
+          PrintGame();
           
           world.RemovePlayer();
      }
@@ -283,5 +314,87 @@ public class NetworkController
                _client.Send("{\"moving\":\"down\"}");
           }
           
+     }
+     
+     private void UpdateStartTime()
+     {
+          using (MySqlConnection conn = new MySqlConnection(connectionString))
+          {
+               
+               conn.Open();
+
+               Console.WriteLine("Database connection successful!");
+               
+               
+               MySqlCommand command = conn.CreateCommand();
+               
+               command.CommandText =
+                    @"INSERT INTO Game (StartTime)
+                      VALUES (@startTime)";
+               
+               command.Parameters.AddWithValue("@startTime", startTime);
+               
+               command.ExecuteNonQuery();
+               
+               //Store the ID
+               command.CommandText = "SELECT LAST_INSERT_ID()";
+               gameID = Convert.ToInt32(command.ExecuteScalar());
+               
+          }
+     }
+
+     private void UpdateEndTime()
+     {
+          using (MySqlConnection conn = new MySqlConnection(connectionString))
+          {
+               
+               conn.Open();
+
+               Console.WriteLine("Database connection successful!");
+               
+               
+               MySqlCommand command = conn.CreateCommand();
+               
+               //Update the existing row
+               command.CommandText =
+                    @"Update Game set EndTime = @endTime WHERE ID = @gameID";
+               
+               command.Parameters.AddWithValue("@endTime", endTime);
+               command.Parameters.AddWithValue("@gameID", gameID);
+               
+               command.ExecuteNonQuery();
+               
+               
+          }
+               
+     }
+
+     private void PrintGame()
+     {
+          using ( MySqlConnection conn = new MySqlConnection( connectionString ) )
+          {
+               try
+               {
+                    // Open a connection
+                    conn.Open();
+
+                    // Create a command
+                    MySqlCommand command = conn.CreateCommand();
+                    command.CommandText = "SELECT ID, StartTime, EndTime from Game";
+
+                    // Execute the command and cycle through the DataReader object
+                    using ( MySqlDataReader reader = command.ExecuteReader() )
+                    {
+                         while ( reader.Read() )
+                         {
+                              Console.WriteLine( reader["ID"] + " " + reader["StartTime"]  + " " + reader["EndTime"] );
+                         }
+                    }
+               }
+               catch ( Exception e )
+               {
+                    Console.WriteLine( e.Message );
+               }
+          }
      }
 }
