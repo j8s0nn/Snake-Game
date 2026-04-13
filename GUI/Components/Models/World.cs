@@ -113,8 +113,28 @@ public class World
         {
             return;
         }
-        Players[player.ID] = player;
+
+        if (Players.ContainsKey(player.ID))
+        {
+            Player existingPlayer = Players[player.ID];
+            player.MaxScore = Math.Max(existingPlayer.MaxScore, player.Score);
+            Players[player.ID] = player;
+        }
+        else
+        {
+            player.MaxScore = player.Score;
+            Players[player.ID] = player;
+
+        }
+
+
+
+
+        // Players[player.ID] = player;
         HasChanged = true;
+        
+        
+        
     }
 
     /// <summary>

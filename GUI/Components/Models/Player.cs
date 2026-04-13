@@ -79,6 +79,9 @@ public class Player
     /// </summary>
     public bool WasDead { get; set; } = false;
 
+    [JsonIgnore]
+    public int MaxScore { get; set; } = 0;
+
 
     /// <summary>
     /// Initialize a default player
@@ -92,6 +95,7 @@ public class Player
         Score = 0;
         IsDisconnected = false;
         Joined = true;
+        MaxScore = 0;
     }
 
 
