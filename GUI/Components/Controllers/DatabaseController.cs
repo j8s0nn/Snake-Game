@@ -135,7 +135,8 @@ public class DatabaseController
                MySqlCommand command = conn.CreateCommand();
                
                //
-               Console.WriteLine($"World player id: {world.playerID}");
+               // Console.WriteLine($"World player id: {world.playerID}");
+               
                
                if (!world.Players.ContainsKey(world.playerID)) // Not See the snake before, insert it
                {
@@ -168,14 +169,30 @@ public class DatabaseController
                MySqlCommand command = conn.CreateCommand();
                
                
-               command.CommandText = @"UPDATE Player SET EndTime = @endTime WHERE GameID = @gameID";
+               command.CommandText = @"UPDATE Player SET EndTime = @endTime  WHERE GameID = @gameId";
                
                command.Parameters.AddWithValue("@endTime", endTime);
                
-               command.Parameters.AddWithValue("@gameID", gameId);
+               command.Parameters.AddWithValue("@gameId", gameId);
                
                command.ExecuteNonQuery();
                
           } 
+     }
+
+     public void UpdatePlayerMaxScore(int playerID, int maxScore)
+     {
+          using (MySqlConnection conn = new MySqlConnection(connectionString))
+          {
+               conn.Open();
+               MySqlCommand command = conn.CreateCommand();
+               
+               command.CommandText = @"UPDATE Player SET MaxScore = @maxScore WHERE ID = @playerID";
+               
+               command.Parameters.AddWithValue("@maxScore", maxScore);
+               command.Parameters.AddWithValue("@playerID", playerID);
+               
+               command.ExecuteNonQuery();
+          }
      }
 }

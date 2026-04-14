@@ -139,9 +139,25 @@ public class NetworkController
           {
                HandleFirstLineInput(world);
 
+               int maxScore = -1;
                while (IsConnected)
                {
                     HandleInput(world);
+                    
+                    if (!world.Players.TryGetValue(world.playerID, out Player player)) // Try get value of players to avoid get stuck
+                    {
+                         continue;
+                    }
+                    else
+                    {
+                         if (player.MaxScore != maxScore) // More efficient
+                         {
+                              databaseController.UpdatePlayerMaxScore(world.playerID, player.MaxScore);
+                              maxScore = player.MaxScore;
+                         }
+                    }
+
+                    
                }
           }
           catch (Exception e)
@@ -251,7 +267,6 @@ public class NetworkController
                          }
 
                          world.AddPlayer(player);
-                         
                          
                          
                     }
