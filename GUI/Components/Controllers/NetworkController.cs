@@ -66,7 +66,9 @@ public class NetworkController
      private DateTime endTime;
 
      private DatabaseController databaseController;
-     
+
+
+     private string playerName;
      
      
      /// <summary>
@@ -114,8 +116,12 @@ public class NetworkController
           
           _client.Send(name);
           
-          //After succesfully connect to the game, 
-          databaseController.UpdateStartTime(startTime);
+          playerName = name;
+          
+          //After succesfully connect to the game, store the gameID
+          gameID = databaseController.UpdateStartTime(startTime);
+          
+          
           
           ProcessInput(world);
      }
@@ -161,6 +167,11 @@ public class NetworkController
                if (Int32.TryParse(input, out int id))
                {
                     world.playerID = id;
+                    
+                    //TODO: Debug
+                    // Console.WriteLine($"Player ID: {id}");
+                    
+                  
                }
                else
                {
@@ -179,6 +190,12 @@ public class NetworkController
                {
                     _client.Disconnect();
                }
+               
+               //Update after receiving the playerID from the world
+               databaseController.UpdatePlayerStartTime(world, playerName, gameID, startTime);
+                    
+               // //TODO:Debug
+               // databaseController.PrintPlayer();
                
           }
           catch (Exception e) 
@@ -236,6 +253,7 @@ public class NetworkController
                          world.AddPlayer(player);
                          
                          
+                         
                     }
                }
           }
@@ -269,9 +287,18 @@ public class NetworkController
           
           endTime = DateTime.Now;
           
+          
+          //Update the endtime of the game table
           databaseController.UpdateEndTime(gameID, endTime);
+          
+          
+          Console.WriteLine("Disconnected: ");
+          //Update the endTime of player table
+          databaseController.UpdatePlayerEndTime(gameID, endTime);
+          databaseController.PrintPlayer();
+          //TODO: Debug
           //
-          databaseController.PrintGame();
+          // databaseController.PrintGame();
           
           world.RemovePlayer();
      }
