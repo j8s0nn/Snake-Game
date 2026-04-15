@@ -10,6 +10,8 @@
 
 using System.Text.Json.Serialization;
 
+using System; 
+
 namespace GUI.Components.Models;
 
 /// <summary>
@@ -82,6 +84,11 @@ public class Player
     [JsonIgnore]
     public int MaxScore { get; set; } = 0;
 
+    [JsonIgnore] public DateTime EnterTime { get; set; } 
+
+    [JsonIgnore]
+    public DateTime LeaveTime  { get; set; } 
+    
 
     /// <summary>
     /// Initialize a default player
@@ -96,6 +103,7 @@ public class Player
         IsDisconnected = false;
         Joined = true;
         MaxScore = 0;
+        
     }
 
 
@@ -114,6 +122,8 @@ public class Player
         Alive = other.Alive;
         Body = new List<Point2D>(other.Body);
         Direction = new Point2D(other.Direction.X, other.Direction.Y);
+        MaxScore = other.MaxScore;
+        EnterTime = other.EnterTime;
     }
     
 

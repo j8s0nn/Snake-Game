@@ -69,6 +69,8 @@ public class NetworkController
 
 
      private string playerName;
+
+     private HashSet<int> playerIDs;
      
      
      /// <summary>
@@ -119,9 +121,11 @@ public class NetworkController
           playerName = name;
           
           //After succesfully connect to the game, store the gameID
-          gameID = databaseController.UpdateStartTime(startTime);
+          // gameID = databaseController.UpdateGameStartTimeClient(startTime);
           
           
+          
+          Console.WriteLine("Connected: " + playerName);
           
           ProcessInput(world);
      }
@@ -138,27 +142,17 @@ public class NetworkController
           try
           {
                HandleFirstLineInput(world);
-
-               int maxScore = -1;
+               
                while (IsConnected)
                {
                     HandleInput(world);
-                    
-                    if (!world.Players.TryGetValue(world.playerID, out Player player)) // Try get value of players to avoid get stuck
-                    {
-                         continue;
-                    }
-                    else
-                    {
-                         if (player.MaxScore != maxScore) // More efficient
-                         {
-                              databaseController.UpdatePlayerMaxScore(world.playerID, player.MaxScore);
-                              maxScore = player.MaxScore;
-                         }
-                    }
-
-                    
                }
+               
+               
+               
+               
+               
+               
           }
           catch (Exception e)
           {
@@ -208,7 +202,7 @@ public class NetworkController
                }
                
                //Update after receiving the playerID from the world
-               databaseController.UpdatePlayerStartTime(world, playerName, gameID, startTime);
+               // databaseController.UpdateClientStartTime(world, playerName, gameID, startTime);
                     
                // //TODO:Debug
                // databaseController.PrintPlayer();
@@ -260,13 +254,62 @@ public class NetworkController
                     
                     if (player != null)
                     {
+                         
+                         if (world.Players.ContainsKey(player.ID)) // Existing player
+                         {
+                              Player existingPlayer = world.Players[player.ID];
+                              
+                              //Transfer old data into new player
+                              player.EnterTime = existingPlayer.EnterTime;
+                              player.MaxScore = existingPlayer.MaxScore;
+                              
+                              
+                              //Update the maxscore
+                              if (player.Score > player.MaxScore)
+                              {
+                                   player.MaxScore = player.Score; 
+                                   databaseController.UpdatePlayerMaxScore(player.ID, player.MaxScore);
+                              }
+                         }
+                         else // A brand new player
+                         {
+                              player.EnterTime = DateTime.Now;
+                              Console.WriteLine(player.EnterTime);
+                    
+                              Console.WriteLine(player.Name + gameID + "Added");
+                    
+                              gameID = databaseController.UpdateGameStartTime(player);
+                              databaseController.InsertPlayer(gameID, player);    
+                         }
+                         
+                         Console.WriteLine(player.Name + " " + player.ID + " " + world.playerID +" " + player.MaxScore);
+                         
+                         //Update for explosion effect
                          if (player.Died && !player.WasDead)
                          {
                               world.AddDeathPosition(player.ID, player.Body[^1]);
                               player.WasDead = true;
                          }
+                    
+                    
+                         if (player.IsDisconnected)
+                         {
+                              player.LeaveTime = DateTime.Now;
+                              databaseController.UpdateGameEndTime(gameID, player);
+                              databaseController.UpdatePlayerLeaveTime(gameID, player);
+                              Console.WriteLine(player.Name + gameID + "Disconnected");
+                         }
+                         else
+                         {
+                              
+                              world.AddPlayer(player);    
+                              
+                         }
 
-                         world.AddPlayer(player);
+
+                    
+                         
+
                          
                          
                     }
@@ -304,13 +347,13 @@ public class NetworkController
           
           
           //Update the endtime of the game table
-          databaseController.UpdateEndTime(gameID, endTime);
-          
-          
-          Console.WriteLine("Disconnected: ");
-          //Update the endTime of player table
-          databaseController.UpdatePlayerEndTime(gameID, endTime);
-          databaseController.PrintPlayer();
+          // databaseController.UpdateGameEndTimeClient(gameID, endTime);
+          //
+          //
+          // Console.WriteLine("Disconnected: ");
+          // //Update the endTime of player table
+          // databaseController.UpdateClientEndTime(gameID, endTime);
+          // databaseController.PrintPlayer();
           //TODO: Debug
           //
           // databaseController.PrintGame();

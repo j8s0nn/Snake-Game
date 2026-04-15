@@ -12,7 +12,7 @@ public class DatabaseController
        this.connectionString = connectionString;
     }
     
-     public int UpdateStartTime(DateTime startTime)
+     public int UpdateGameStartTimeClient(DateTime startTime)
      {
           using (MySqlConnection conn = new MySqlConnection(connectionString))
           {
@@ -39,7 +39,7 @@ public class DatabaseController
           }
      }
 
-     public void UpdateEndTime(int gameID,  DateTime endTime)
+     public void UpdateGameEndTimeClient(int gameID,  DateTime endTime)
      {
           using (MySqlConnection conn = new MySqlConnection(connectionString))
           {
@@ -53,7 +53,7 @@ public class DatabaseController
                
                //Update the existing row
                command.CommandText =
-                    @"Update Game set EndTime = @endTime WHERE ID = @gameID";
+                    @"Update Game set EndTime = @endTime WHERE ID = @gameID ";
                
                command.Parameters.AddWithValue("@endTime", endTime);
                command.Parameters.AddWithValue("@gameID", gameID);
@@ -125,11 +125,10 @@ public class DatabaseController
           }
      }
 
-     public void UpdatePlayerStartTime(World world, string playerName, int gameId,  DateTime startTime)
+     public void UpdateClientStartTime(World world, string playerName, int gameId,  DateTime startTime)
      {
           using (MySqlConnection conn = new MySqlConnection(connectionString))
           {
-               
                conn.Open();
                
                MySqlCommand command = conn.CreateCommand();
@@ -159,7 +158,7 @@ public class DatabaseController
      }
 
 
-     public void UpdatePlayerEndTime(int gameId, DateTime endTime)
+     public void UpdateClientEndTime(int gameId, DateTime endTime)
      {
           using (MySqlConnection conn = new MySqlConnection(connectionString))
           {
@@ -195,4 +194,105 @@ public class DatabaseController
                command.ExecuteNonQuery();
           }
      }
+
+
+     public void InsertPlayer(int gameId, Player player)
+     {
+          using (MySqlConnection conn = new MySqlConnection(connectionString))
+          {
+               conn.Open();
+               MySqlCommand command = conn.CreateCommand();
+               
+              
+               command.CommandText = @"INSERT INTO Player (ID, Name, GameID, StartTime, MaxScore) VALUES (@id, @name, @gameId, @startTime, @maxScore)";
+
+               command.Parameters.AddWithValue("@id", player.ID);
+               command.Parameters.AddWithValue("@name", player.Name);
+               command.Parameters.AddWithValue("@gameId",gameId );
+               command.Parameters.AddWithValue("@startTime", player.EnterTime);
+               command.Parameters.AddWithValue("@maxScore", player.MaxScore);
+               command.ExecuteNonQuery();
+               
+               Console.WriteLine("Updated Player StartTime");
+          }
+     }
+
+     public void UpdatePlayerLeaveTime(int gameId, Player player)
+     {
+          using (MySqlConnection conn = new MySqlConnection(connectionString))
+          {
+               conn.Open();
+               MySqlCommand command = conn.CreateCommand();
+               
+               command.CommandText = @"UPDATE Player SET EndTime = @endTime WHERE GameID = @gameID AND playerID = @playerID";
+               command.Parameters.AddWithValue("@gameID", gameId);
+               command.Parameters.AddWithValue("@endTime", player.LeaveTime);
+               command.Parameters.AddWithValue("@playerID", player.ID);
+               
+               command.ExecuteNonQuery();
+               
+               Console.WriteLine("Updated Player EndTime");
+          }
+     }
+
+
+     public int UpdateGameStartTime(Player player)
+     {
+          using (MySqlConnection conn = new MySqlConnection(connectionString))
+          {
+               
+               conn.Open();
+
+               
+               
+               MySqlCommand command = conn.CreateCommand();
+               
+               command.CommandText =
+                    @"INSERT INTO Game (StartTime)
+                      VALUES (@startTime)";
+               
+               command.Parameters.AddWithValue("@startTime", player.EnterTime);
+               
+               command.ExecuteNonQuery();
+               
+               //Store the ID
+               command.CommandText = "SELECT LAST_INSERT_ID();";
+               
+               Console.WriteLine("Updated Game Start Time");
+               return Convert.ToInt32(command.ExecuteScalar());
+               
+          }    
+     }
+
+
+     public void UpdateGameEndTime(int gameId, Player player)
+     {
+          using (MySqlConnection conn = new MySqlConnection(connectionString))
+          {
+               
+               conn.Open();
+
+               
+               
+               
+               MySqlCommand command = conn.CreateCommand();
+               
+               //Update the existing row
+               command.CommandText =
+                    @"Update Game set EndTime = @endTime WHERE ID = @gameID";
+               
+               command.Parameters.AddWithValue("@endTime",player.LeaveTime);
+               command.Parameters.AddWithValue("@gameID", gameId);
+               
+               
+               command.ExecuteNonQuery();
+               
+               
+               Console.WriteLine("Updated Game EndTime");
+               
+          }
+     }
+     
+     
+     
 }
