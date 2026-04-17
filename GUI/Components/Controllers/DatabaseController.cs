@@ -53,7 +53,7 @@ public class DatabaseController
                
                //Update the existing row
                command.CommandText =
-                    @"Update Game set EndTime = @endTime WHERE ID = @gameID ";
+                    @"Update Game set EndTime = @endTime WHERE ID = @gameID";
                
                command.Parameters.AddWithValue("@endTime", endTime);
                command.Parameters.AddWithValue("@gameID", gameID);
@@ -224,10 +224,9 @@ public class DatabaseController
                conn.Open();
                MySqlCommand command = conn.CreateCommand();
                
-               command.CommandText = @"UPDATE Player SET EndTime = @endTime WHERE GameID = @gameID AND playerID = @playerID";
+               command.CommandText = @"UPDATE Player SET EndTime = @endTime WHERE GameID = @gameID";
                command.Parameters.AddWithValue("@gameID", gameId);
                command.Parameters.AddWithValue("@endTime", player.LeaveTime);
-               command.Parameters.AddWithValue("@playerID", player.ID);
                
                command.ExecuteNonQuery();
                
@@ -271,9 +270,6 @@ public class DatabaseController
           {
                
                conn.Open();
-
-               
-               
                
                MySqlCommand command = conn.CreateCommand();
                
@@ -288,7 +284,7 @@ public class DatabaseController
                command.ExecuteNonQuery();
                
                
-               Console.WriteLine("Updated Game EndTime");
+               Console.WriteLine("Updated " + player.Name + " EndTime with" + player.LeaveTime );
                
           }
      }
