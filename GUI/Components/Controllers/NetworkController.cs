@@ -85,6 +85,7 @@ public class NetworkController
      /// <param name="world">The game world to update.</param>
      public void Connect(string serverAddress, int port, string name, World world)
      {
+          
           if (string.IsNullOrWhiteSpace(name))
           {
                ErrorMessage = "Please enter a name (Less than 16 characters)";
@@ -148,7 +149,10 @@ public class NetworkController
           string input;
           try
           {
-
+               
+               //TODO: If client connect, then it will receive the information from the snake. If the client doesn't connect and the AI client connect and disconnect in the mean time, how could we handle
+               
+               
                //Read the ID
                input = _client.ReadLine();
                
@@ -240,8 +244,9 @@ public class NetworkController
                               {
                                    //Transfer the old data
                                    player.LeaveTime = DateTime.Now;
-                                   player.GameId = existing.GameId; 
+                                   player.GameId = existing.GameId;
                                    player.EnterTime = existing.EnterTime;
+                                   player.MaxScore = existing.MaxScore;
 
                                    databaseController.UpdateGameEndTime(player.GameId, player);
                                    databaseController.UpdatePlayerLeaveTime(player.GameId, player);
@@ -303,18 +308,19 @@ public class NetworkController
           catch (Exception e)
           {
                
-               // //For client when hit disconnect
+               // // //For client when hit disconnect
                if (world.Players.TryGetValue(world.playerID, out Player player))
                {
                     player.LeaveTime = DateTime.Now;
                     databaseController.UpdateGameEndTime(player.GameId, player);
                     databaseController.UpdatePlayerLeaveTime(player.GameId, player);
                     Console.WriteLine(player.Name + " GameID "+ player.GameId + " Disconnect time " + player.LeaveTime);
+                    world.Players.Remove(player.ID);
                }
                
                HandleError(e);
                
-               world.RemovePlayer();
+               
           }
      }
 
@@ -361,6 +367,9 @@ public class NetworkController
           _client = null;
           
           
+          
+          
+          world.Players.Clear();
      }
 
      /// <summary>

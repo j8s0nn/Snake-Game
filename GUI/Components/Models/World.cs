@@ -117,25 +117,30 @@ public class World
             return;
         }
 
-        if (Players.ContainsKey(player.ID))
+        lock (Players)
         {
-            Player existingPlayer = Players[player.ID];
+            if (Players.ContainsKey(player.ID))
+            {
+                Player existingPlayer = Players[player.ID];
             
-            //Keep the existing time
-            player.EnterTime = existingPlayer.EnterTime;
+                //Keep the existing time
+                player.EnterTime = existingPlayer.EnterTime;
             
             
-            player.MaxScore = Math.Max(existingPlayer.MaxScore, player.Score);
-            Players[player.ID] = player;
+                player.MaxScore = Math.Max(existingPlayer.MaxScore, player.Score);
+                Players[player.ID] = player;
             
+            }
+            else
+            {
+                //Store the current time
+                player.EnterTime = DateTime.Now;
+                player.MaxScore = player.Score;
+                Players[player.ID] = player;
+            }
         }
-        else
-        {
-            //Store the current time
-            player.EnterTime = DateTime.Now;
-            player.MaxScore = player.Score;
-            Players[player.ID] = player;
-        }
+
+        
         
 
         
@@ -147,9 +152,15 @@ public class World
     /// </summary>
     public void RemovePlayer()
     {
-        Players[playerID].LeaveTime = DateTime.Now;
-        
-        Players.Remove(playerID);
+
+        lock (Players)
+        {
+            
+            Players[playerID].LeaveTime = DateTime.Now;
+            
+            Players.Remove(playerID);
+        }
+
     }
 
 
