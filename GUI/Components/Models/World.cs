@@ -7,8 +7,11 @@
 // </summary>
 
 
+using GUI.Components.Controllers;
+
 namespace GUI.Components.Models;
 
+using System;
 
 
 /// <summary>
@@ -45,7 +48,9 @@ public class World
     /// </summary>
     public Dictionary<int, Point2D> DeathPositions { get; set; }
 
-    public bool HasChanged { get; set; } =  false;
+    public bool HasRemoved { get; set; } =  false;
+    
+    public bool HasAdded { get; set; } =  false;
 
     /// <summary>
     /// Gets or sets the ID of the current player.
@@ -62,6 +67,8 @@ public class World
     /// </summary>
     public int Height { get; set; } = 0;
 
+
+    private DatabaseController database;
     
     /// <summary>
     /// Initialize a default world.
@@ -72,9 +79,6 @@ public class World
         Walls = new Dictionary<int, Wall>();
         Powerups = new Dictionary<int, Powerup>();
         DeathPositions = new Dictionary<int, Point2D>();
-        
-        
-       
     }
 
     
@@ -91,7 +95,6 @@ public class World
         Width = oldWorld.Width;
         Height = oldWorld.Height;
         playerID = oldWorld.playerID;
-       HasChanged = true;
     }
 
     /// <summary>
@@ -117,22 +120,24 @@ public class World
         if (Players.ContainsKey(player.ID))
         {
             Player existingPlayer = Players[player.ID];
+            
+            //Keep the existing time
+            player.EnterTime = existingPlayer.EnterTime;
+            
+            
             player.MaxScore = Math.Max(existingPlayer.MaxScore, player.Score);
             Players[player.ID] = player;
+            
         }
         else
         {
+            //Store the current time
+            player.EnterTime = DateTime.Now;
             player.MaxScore = player.Score;
             Players[player.ID] = player;
-
         }
-
-
-
-
-        // Players[player.ID] = player;
-        HasChanged = true;
         
+
         
         
     }
@@ -142,6 +147,8 @@ public class World
     /// </summary>
     public void RemovePlayer()
     {
+        Players[playerID].LeaveTime = DateTime.Now;
+        
         Players.Remove(playerID);
     }
 
@@ -156,7 +163,6 @@ public class World
         
         Width = width;
         Height = height;
-        
     }
 
     /// <summary>
@@ -171,7 +177,6 @@ public class World
         }
 
         Walls[wall.ID] = wall;
-        HasChanged = true;
         
     }
     
@@ -187,8 +192,6 @@ public class World
         }
         
         Powerups[powerup.ID] = powerup;
-        HasChanged = true;
-        
     }
 
 
@@ -205,7 +208,6 @@ public class World
         }
 
         DeathPositions[playerId] = deathPosition;
-        HasChanged = true;
     }
     
 
