@@ -87,8 +87,10 @@ public class Player
     [JsonIgnore] public DateTime EnterTime { get; set; } 
 
     [JsonIgnore]
-    public DateTime LeaveTime  { get; set; } 
-    
+    public DateTime LeaveTime  { get; set; }
+
+
+    public int GameId { get; set; }
 
     /// <summary>
     /// Initialize a default player
