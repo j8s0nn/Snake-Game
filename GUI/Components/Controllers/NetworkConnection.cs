@@ -50,8 +50,8 @@ public sealed class NetworkConnection : IDisposable
         if ( IsConnected )
         {
             // Only establish the reader/writer if the provided TcpClient is already connected.
-            _reader = new StreamReader( _tcpClient.GetStream(), Encoding.UTF8 );
-            _writer = new StreamWriter( _tcpClient.GetStream(), Encoding.UTF8 ) { AutoFlush = true }; // AutoFlush ensures data is sent immediately
+            _reader = new StreamReader( _tcpClient.GetStream(), new UTF8Encoding(false) );
+            _writer = new StreamWriter( _tcpClient.GetStream(), new UTF8Encoding(false) ) { AutoFlush = true }; // AutoFlush ensures data is sent immediately
         }
     }
 
@@ -131,7 +131,8 @@ public sealed class NetworkConnection : IDisposable
         }
 
         string? message = _reader.ReadLine();
-
+        
+        
         if (message == string.Empty || message is null)
         {
             throw new InvalidOperationException("Can't read empty message");
@@ -154,7 +155,6 @@ public sealed class NetworkConnection : IDisposable
         
         _reader = null;
         _writer = null;
-        
     }
 
     /// <summary>
