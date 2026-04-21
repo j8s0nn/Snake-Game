@@ -63,7 +63,56 @@ class Program //TODO: http://localhost:8080/
                                       "<html>\n  <h3>Welcome to the Snake Games Database!</h3>\n  <a href=\"/games\">View Games</a>\n</html>");
                 handleConnection.Disconnect();
             }
-            else if (splittedHttpRequest[1].Trim() == "/games")
+            else if (splittedHttpRequest[1].Trim().StartsWith("/games?gid=")) 
+            {
+                
+                //Extract the gameId
+                string[] parts = splittedHttpRequest[1].Split('=');
+                if (parts.Length < 2 || !int.TryParse(parts[1], out int gid))
+                {
+                    handleConnection.Send(httpErrorHeader + "<html>Invalid Game ID</html>");
+                    handleConnection.Disconnect();
+                    return;
+                }
+                
+                Console.WriteLine("In gid"  + gid);
+                //Get the player records
+                List<PlayerRecord> playerRecords = databaseController.GetPlayerRecords(gid);
+                
+                StringBuilder content = new StringBuilder();
+                
+                content.AppendLine("<html>");
+                content.AppendLine($"<h3>Stats for Game {gid}</h3>");
+                content.AppendLine("<table border=\"1\">");
+                content.AppendLine("<thead>");
+                content.AppendLine("<tr>");
+                content.AppendLine("<td>Player ID</td><td>Player Name</td><td>Max Score</td><td>Enter Time</td><td>Leave Time</td>");
+                content.AppendLine("</tr>");
+                content.AppendLine("</thead>");
+                content.AppendLine("<tbody>");
+                
+                
+                foreach (PlayerRecord playerRecord in playerRecords)
+                {
+                    content.AppendLine("<tr>");
+
+                    //Handling nullable endtime
+                    string leaveTime = playerRecord.EndTime?.ToString() ?? string.Empty;
+
+                    content.Append($"<td>{playerRecord.ID}</td><td>{playerRecord.Name}</td><td>{playerRecord.MaxScore}</td><td>{playerRecord.StartTime}</td><td>{leaveTime}</td>");
+                    content.AppendLine("</tr>");
+                }
+                
+                content.Append("</tbody>");
+                content.AppendLine("</table>");
+                content.AppendLine("<br/><a href='/games'>Back to Games List</a>");
+                content.AppendLine("</html>");
+                
+                handleConnection.Send(httpOkHeader + content.ToString());
+                handleConnection.Disconnect();
+
+            }
+            else // Stats for specific game
             {
                 List<GameRecord> games = databaseController.GetGameRecords();
                 
@@ -99,10 +148,8 @@ class Program //TODO: http://localhost:8080/
                 handleConnection.Send(httpOkHeader+ content.ToString());
 
                 handleConnection.Disconnect();
-            }
-            else // Stats for specific game
-            {
-
+                
+                
             }
 
 

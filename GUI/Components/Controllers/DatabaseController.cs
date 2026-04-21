@@ -1,26 +1,64 @@
+// <summary>
+//   <para>
+//     <authors> Quoc Thinh Le </authors>
+//     <date> 4/21/2026 </date>
+//        Represents the database controller responsible for managing game and player data,
+//        including inserting, updating, and retrieving records from the database.
+//   </para>
+// </summary>
+
+
 using GUI.Components.Models;
 using MySql.Data.MySqlClient;
 
 namespace GUI.Components.Controllers;
 
+
+
+/// <summary>
+/// Provides database operations for storing and retrieving game and player data
+/// for the Snake game application.
+/// </summary>
+/// <remarks>
+/// This controller is responsible for:
+/// <list type="bullet">
+/// <item>Creating and updating game records (start and end times)</item>
+/// <item>Inserting and updating player records (scores, join/leave times)</item>
+/// <item>Retrieving stored game and player statistics</item>
+/// </list>
+/// </remarks>
 public class DatabaseController
 {
+     
+     /// <summary>
+     /// The connection string used to connect to the database.
+     /// </summary>
      private readonly string connectionString;
 
+     
+     /// <summary>
+     /// Initializes a new instance of the <see cref="DatabaseController"/> class.
+     /// </summary>
+     /// <param name="connectionString">
+     /// The connection string used to connect to the MySQL database.
+     /// </param>
      public DatabaseController(string connectionString)
      {
           this.connectionString = connectionString;
      }
 
+     
+     /// <summary>
+     /// Inserts a new game record with the specified start time when the client connect to the game.
+     /// </summary>
+     /// <param name="startTime">The time the game started.</param>
+     /// <returns>The ID of the newly created game.</returns>
      public int UpdateGameStartTimeClient(DateTime startTime)
      {
           using (MySqlConnection conn = new MySqlConnection(connectionString))
           {
 
                conn.Open();
-
-               // Console.WriteLine("Database connection successful!");
-
 
                MySqlCommand command = conn.CreateCommand();
 
@@ -39,16 +77,19 @@ public class DatabaseController
           }
      }
 
+     
+     /// <summary>
+     /// Updates the end time of a game when the client disconnect.
+     /// </summary>
+     /// <param name="gameID">The ID of the game to update.</param>
+     /// <param name="endTime">The time the game ended.</param>
      public void UpdateGameEndTimeClient(int gameID, DateTime endTime)
      {
           using (MySqlConnection conn = new MySqlConnection(connectionString))
           {
 
                conn.Open();
-
-               Console.WriteLine("Database connection successful!");
-
-
+               
                MySqlCommand command = conn.CreateCommand();
 
                //Update the existing row
@@ -63,63 +104,12 @@ public class DatabaseController
           }
      }
      
-    
-
-     public void UpdateClientStartTime(World world, string playerName, int gameId, DateTime startTime)
-     {
-          using (MySqlConnection conn = new MySqlConnection(connectionString))
-          {
-               conn.Open();
-
-               MySqlCommand command = conn.CreateCommand();
-
-               //
-               // Console.WriteLine($"World player id: {world.playerID}");
-
-
-               if (!world.Players.ContainsKey(world.playerID)) // Not See the snake before, insert it
-               {
-                    command.CommandText =
-                         @"INSERT INTO Player (ID, Name, GameID, StartTime) VALUES (@id, @name, @gameId, @startTime)";
-
-                    command.Parameters.AddWithValue("@id", world.playerID);
-                    command.Parameters.AddWithValue("@name", playerName);
-                    command.Parameters.AddWithValue("@gameId", gameId);
-                    command.Parameters.AddWithValue("@startTime", startTime);
-
-                    command.ExecuteNonQuery();
-               }
-               else // See it before, update
-               {
-
-               }
-          }
-
-
-     }
-
-
-     public void UpdateClientEndTime(int gameId, DateTime endTime)
-     {
-          using (MySqlConnection conn = new MySqlConnection(connectionString))
-          {
-
-               conn.Open();
-
-               MySqlCommand command = conn.CreateCommand();
-
-
-               command.CommandText = @"UPDATE Player SET EndTime = @endTime  WHERE GameID = @gameId";
-
-               command.Parameters.AddWithValue("@endTime", endTime);
-
-               command.Parameters.AddWithValue("@gameId", gameId);
-
-               command.ExecuteNonQuery();
-
-          }
-     }
-
+     
+     /// <summary>
+     /// Updates the maximum score of a player within a specific game.
+     /// </summary>
+     /// <param name="gameID">The ID of the game.</param>
+     /// <param name="player">The player whose score is updated.</param>
      public void UpdatePlayerMaxScore(int gameID, Player player)
      {
           using (MySqlConnection conn = new MySqlConnection(connectionString))
@@ -128,7 +118,6 @@ public class DatabaseController
                MySqlCommand command = conn.CreateCommand();
 
                command.CommandText = @"UPDATE Player SET MaxScore = @maxScore WHERE ID = @playerID AND @gameId = gameId";
-
                
                command.Parameters.AddWithValue("@gameId", gameID);
                command.Parameters.AddWithValue("@maxScore", player.MaxScore);
@@ -139,6 +128,11 @@ public class DatabaseController
      }
 
 
+     /// <summary>
+     /// Inserts a new player record when a player is first seen in a game.
+     /// </summary>
+     /// <param name="gameId">The ID of the game.</param>
+     /// <param name="player">The player to insert.</param>
      public void InsertPlayer(int gameId, Player player)
      {
           using (MySqlConnection conn = new MySqlConnection(connectionString))
@@ -156,11 +150,18 @@ public class DatabaseController
                command.Parameters.AddWithValue("@startTime", player.EnterTime);
                command.Parameters.AddWithValue("@maxScore", player.MaxScore);
                command.ExecuteNonQuery();
-
-               Console.WriteLine($"Updated Player  {player.Name} with ID {player.ID} started at {player.EnterTime} max score {player.MaxScore}");
           }
      }
 
+     
+     /// <summary>
+     /// Updates the leave time (EndTime) for a player in a specific game. 
+     /// </summary>
+     /// <param name="gameId">The ID of the game.</param>
+     /// <param name="player">The player who disconnected.</param>
+     /// <remarks>
+     /// This method is used when the client receives a player update from the server where the "dc" property of a a player is set to true.
+     /// </remarks>
      public void UpdatePlayerLeaveTime(int gameId, Player player)
      {
           using (MySqlConnection conn = new MySqlConnection(connectionString))
@@ -178,66 +179,14 @@ public class DatabaseController
 
                command.ExecuteNonQuery();
                
-               // Console.WriteLine("Updated Player " + player.ID + " LeaveTime with" + player.LeaveTime);
           }
      }
 
 
-     public int UpdateGameStartTime(Player player)
-     {
-          using (MySqlConnection conn = new MySqlConnection(connectionString))
-          {
-
-               conn.Open();
-
-
-
-               MySqlCommand command = conn.CreateCommand();
-
-               command.CommandText =
-                    @"INSERT INTO Game (StartTime)
-                      VALUES (@startTime)";
-
-               command.Parameters.AddWithValue("@startTime", player.EnterTime);
-
-               command.ExecuteNonQuery();
-
-               //Store the ID
-               command.CommandText = "SELECT LAST_INSERT_ID();";
-
-               Console.WriteLine("Updated Game Start Time");
-               return Convert.ToInt32(command.ExecuteScalar());
-
-          }
-     }
-
-
-     public void UpdateGameEndTime(int gameId, Player player)
-     {
-          using (MySqlConnection conn = new MySqlConnection(connectionString))
-          {
-
-               conn.Open();
-
-               MySqlCommand command = conn.CreateCommand();
-
-               //Update the existing row
-               command.CommandText =
-                    @"Update Game set EndTime = @endTime WHERE ID = @gameID";
-
-               command.Parameters.AddWithValue("@endTime", player.LeaveTime);
-               command.Parameters.AddWithValue("@gameID", gameId);
-
-
-               command.ExecuteNonQuery();
-
-
-               Console.WriteLine("Updated " + player.Name + " EndTime with" + player.LeaveTime);
-
-          }
-     }
-
-
+     /// <summary>
+     /// Retrieves all game records from the database.
+     /// </summary>
+     /// <returns>A list of <see cref="GameRecord"/> objects.</returns>
      public List<GameRecord> GetGameRecords()
      {
           List<GameRecord> games = new List<GameRecord>();
@@ -277,6 +226,53 @@ public class DatabaseController
           return games;
      }
 
+     
+     /// <summary>
+     /// Retrieves all player records for a specific game.
+     /// </summary>
+     /// <param name="gameId">The ID of the game.</param>
+     /// <returns>A list of <see cref="PlayerRecord"/> objects.</returns>
+     public List<PlayerRecord> GetPlayerRecords(int gameId)
+     {
+          List<PlayerRecord> players = new List<PlayerRecord>();
 
+
+          using (MySqlConnection conn = new MySqlConnection(connectionString))
+          {
+
+               conn.Open();
+
+               MySqlCommand command = conn.CreateCommand();
+               
+               //Select from a specific game
+               command.CommandText = @"SELECT ID, Name, MaxScore, StartTime, EndTime FROM Player WHERE GameId =@gid";
+               
+               command.Parameters.AddWithValue("@gid", gameId);
+               
+               using ( MySqlDataReader reader = command.ExecuteReader() )
+               {
+                    while ( reader.Read() )
+                    {
+                         PlayerRecord player = new PlayerRecord();
+                         player.ID = reader.GetInt32( "ID" );
+                         player.Name = reader.GetString( "Name" );
+                         player.MaxScore = reader.GetInt32( "MaxScore" );
+                         player.StartTime = reader.GetDateTime( "StartTime" );
+
+                         int endTimeIndex = reader.GetOrdinal("EndTime");
+                         if (!reader.IsDBNull(endTimeIndex)) // Add when the endtime is not null
+                         {
+                              player.EndTime = reader.GetDateTime( "EndTime") ;
+                             
+                         }
+
+                         players.Add( player );
+                    }
+               }
+          }
+
+          return players;
+     }
+     
 
 }
