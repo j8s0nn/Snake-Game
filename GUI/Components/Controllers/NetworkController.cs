@@ -63,8 +63,9 @@ public class NetworkController
 
      private DatabaseController databaseController;
 
-     
-     private HashSet<int> playerIDs;
+     private int currentGameId;
+
+     private HashSet<int> insertedPlayers;
      
      
      /// <summary>
@@ -74,6 +75,7 @@ public class NetworkController
      {
           _client = new NetworkConnection();
           databaseController = new DatabaseController(connectionString);
+          insertedPlayers = new();
      }
 
      /// <summary>
@@ -111,7 +113,11 @@ public class NetworkController
           
           _client.Send(name);
           
+          // currentGameId = databaseController.UpdateGameStartTimeClient(DateTime.Now);
+          
           ProcessInput(world);
+          
+          
      }
 
 
@@ -152,7 +158,6 @@ public class NetworkController
                
                //TODO: If client connect, then it will receive the information from the snake. If the client doesn't connect and the AI client connect and disconnect in the mean time, how could we handle
                
-               
                //Read the ID
                input = _client.ReadLine();
                
@@ -179,11 +184,9 @@ public class NetworkController
                     _client.Disconnect();
                }
                
+               
+               currentGameId = databaseController.UpdateGameStartTimeClient(DateTime.Now);
                //Update after receiving the playerID from the world
-               // databaseController.UpdateClientStartTime(world, playerName, gameID, startTime);
-                    
-               // //TODO:Debug
-               // databaseController.PrintPlayer();
                
           }
           catch (Exception e) 
@@ -204,7 +207,6 @@ public class NetworkController
           try
           {
                string line = _client.ReadLine();
-               
                
                if (line.Contains("wall") && line.Contains("p1") && line.Contains("p2"))
                {
@@ -237,57 +239,50 @@ public class NetworkController
                     if (player != null)
                     {
                          
+                         
+                         //For update AIClient
                          if (player.IsDisconnected)
                          {
-                              
-                              if (world.Players.TryGetValue(player.ID, out Player? existing))
+                              if (world.Players.TryGetValue(player.ID, out Player existing))
                               {
-                                   //Transfer the old data
                                    player.LeaveTime = DateTime.Now;
-                                   player.GameId = existing.GameId;
-                                   player.EnterTime = existing.EnterTime;
-                                   player.MaxScore = existing.MaxScore;
-
-                                   databaseController.UpdateGameEndTime(player.GameId, player);
-                                   databaseController.UpdatePlayerLeaveTime(player.GameId, player);
                                    
-                                   //Remove the disconnected player
-                                   world.Players.Remove(player.ID);
+                                   databaseController.UpdatePlayerLeaveTime(currentGameId, player);
+
+                                   world.RemovePlayer();
                               }
-        
-                              return; 
-                         }
-                         
-                         
-                         if (world.Players.ContainsKey(player.ID)) // Existing player
-                         {
-                              Player existingPlayer = world.Players[player.ID];
                               
-                              //Transfer old data into new player
-                              player.EnterTime = existingPlayer.EnterTime;
-                              player.MaxScore = existingPlayer.MaxScore;
-                              player.GameId = existingPlayer.GameId;
+                              return;
+                               
                          }
-                         else // A brand-new player
+                         
+                         if (!insertedPlayers.Contains(player.ID)) // FIRST time seeing this player
                          {
+                              
                               player.EnterTime = DateTime.Now;
-                              // Console.WriteLine("Enter time: " + player.EnterTime);
-                    
-                              // Console.WriteLine(player.Name + gameID + "Added");
-                    
-                              player.GameId = databaseController.UpdateGameStartTime(player);
                               
-                              databaseController.InsertPlayer(player.GameId, player);    
+                              databaseController.InsertPlayer(currentGameId, player);
+
+                              insertedPlayers.Add(player.ID);
                               
-                              // Console.WriteLine(player.Name + "gameID:  " + player.GameId+ " " + " EnterTime: " + player.EnterTime);
+                              Console.WriteLine($"Added player ID {player.ID} ");
                          }
                          
                          
-                         //Update the max score
-                         if (player.Score > player.MaxScore)
+                         if (world.Players.TryGetValue(player.ID, out Player existingPlayer))
                          {
-                              player.MaxScore = player.Score; 
-                              databaseController.UpdatePlayerMaxScore(player.ID, player.MaxScore);
+                              // Console.WriteLine("Current game ID" + currentGameId + "Player game ID " + player.GameId);
+                              
+                              
+                              if (player.Score > existingPlayer.MaxScore)
+                              {
+                                   player.MaxScore = player.Score;
+                                   databaseController.UpdatePlayerMaxScore(currentGameId, player);
+                              }
+                              else
+                              {
+                                   player.MaxScore = existingPlayer.MaxScore;
+                              }
                          }
                          
                          // Console.WriteLine(player.Name + " " + player.ID + " " + world.playerID +" " + player.MaxScore);
@@ -299,7 +294,9 @@ public class NetworkController
                               player.WasDead = true;
                          }
                          
-                         world.AddPlayer(player);    
+                         world.AddPlayer(player);
+                         // Console.WriteLine("Added player " + player.ID);
+                         
                          
                          
                     }
@@ -308,19 +305,21 @@ public class NetworkController
           catch (Exception e)
           {
                
-               // // //For client when hit disconnect
+               // For client when hit disconnect
                if (world.Players.TryGetValue(world.playerID, out Player player))
                {
                     player.LeaveTime = DateTime.Now;
-                    databaseController.UpdateGameEndTime(player.GameId, player);
-                    databaseController.UpdatePlayerLeaveTime(player.GameId, player);
-                    Console.WriteLine(player.Name + " GameID "+ player.GameId + " Disconnect time " + player.LeaveTime);
-                    world.Players.Remove(player.ID);
+                    
+                    databaseController.UpdatePlayerLeaveTime(currentGameId, player);
+
+                    world.RemovePlayer();
+                    
                }
+               
                
                HandleError(e);
                
-               
+               // world.RemovePlayer();
           }
      }
 
@@ -350,26 +349,16 @@ public class NetworkController
           // endTime = DateTime.Now;
           
           //Update the endtime of the game table
-          // world.Players[world.playerID].LeaveTime = DateTime.Now;
-          //  databaseController.UpdateGameEndTimeClient(gameID, world.Players[world.playerID].LeaveTime);
-          // //
-          // //
-          // // Console.WriteLine("Disconnected: ");
-          // // //Update the endTime of player table
-          // databaseController.UpdateClientEndTime(gameID, world.Players[world.playerID].LeaveTime);
-          // databaseController.PrintPlayer();
-          //TODO: Debug
-          //
-          // databaseController.PrintGame();
+          world.Players[world.playerID].LeaveTime = DateTime.Now;
+          databaseController.UpdateGameEndTimeClient(currentGameId, world.Players[world.playerID].LeaveTime);
           
           _client?.Disconnect();
           
           _client = null;
           
+          // world.RemovePlayer();
           
-          
-          
-          world.Players.Clear();
+          // world.Players.Clear();
      }
 
      /// <summary>
