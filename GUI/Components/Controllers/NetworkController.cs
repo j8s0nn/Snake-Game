@@ -11,6 +11,7 @@
 
 using GUI.Components.Models;
 using System.Text.Json;
+using System.Transactions;
 
 namespace GUI.Components.Controllers;
 
@@ -66,7 +67,9 @@ public class NetworkController
      private int currentGameId;
 
      private HashSet<int> insertedPlayers;
-     
+
+
+     // private HashSet<int> gameIds;
      
      /// <summary>
      /// Initialize a new network connection (client) used for reading inputs from the server.
@@ -87,6 +90,9 @@ public class NetworkController
      /// <param name="world">The game world to update.</param>
      public void Connect(string serverAddress, int port, string name, World world)
      {
+          
+          //Clear when first connect
+          insertedPlayers.Clear();
           
           if (string.IsNullOrWhiteSpace(name))
           {
@@ -186,6 +192,7 @@ public class NetworkController
                
                
                currentGameId = databaseController.UpdateGameStartTimeClient(DateTime.Now);
+               // gameIds.Add(currentGameId);
                //Update after receiving the playerID from the world
                
           }
@@ -249,7 +256,11 @@ public class NetworkController
                                    
                                    databaseController.UpdatePlayerLeaveTime(currentGameId, player);
 
-                                   world.RemovePlayer();
+                                   insertedPlayers.Remove(player.ID);
+                                   
+                                   // gameIds.Remove(currentGameId);
+                                   
+                                   world.Players.Remove(player.ID);;
                               }
                               
                               return;
@@ -258,22 +269,30 @@ public class NetworkController
                          
                          if (!insertedPlayers.Contains(player.ID)) // FIRST time seeing this player
                          {
-                              
                               player.EnterTime = DateTime.Now;
-                              
-                              databaseController.InsertPlayer(currentGameId, player);
+
+
+                              // foreach (int gameId in gameIds)
+                              // {
+                                   databaseController.UpdatePlayerMaxScore(currentGameId, player);
+                              // }
 
                               insertedPlayers.Add(player.ID);
                               
-                              Console.WriteLine($"Added player ID {player.ID} ");
+                              Console.WriteLine($"Insert player ID {player.ID} ");
                          }
                          
+                         Console.WriteLine("Length of inserted Players" + insertedPlayers.Count);
+
+                         // foreach (var id in insertedPlayers)
+                         // {
+                         //      Console.WriteLine(id);
+                         // }
                          
                          if (world.Players.TryGetValue(player.ID, out Player existingPlayer))
                          {
-                              // Console.WriteLine("Current game ID" + currentGameId + "Player game ID " + player.GameId);
-                              
-                              
+                             
+
                               if (player.Score > existingPlayer.MaxScore)
                               {
                                    player.MaxScore = player.Score;
@@ -284,7 +303,13 @@ public class NetworkController
                                    player.MaxScore = existingPlayer.MaxScore;
                               }
                          }
+                         else
+                         {
+                              // databaseController.InsertPlayer(currentGameId, player);
+                              player.MaxScore = player.Score; 
+                         }
                          
+
                          // Console.WriteLine(player.Name + " " + player.ID + " " + world.playerID +" " + player.MaxScore);
                          
                          //Update for explosion effect
@@ -312,7 +337,7 @@ public class NetworkController
                     
                     databaseController.UpdatePlayerLeaveTime(currentGameId, player);
 
-                    world.RemovePlayer();
+                    world.Players.Remove(player.ID);
                     
                }
                
@@ -335,6 +360,8 @@ public class NetworkController
           _client?.Disconnect();
           
           _client = null;
+          
+          insertedPlayers.Clear();
      }
 
 
@@ -349,14 +376,19 @@ public class NetworkController
           // endTime = DateTime.Now;
           
           //Update the endtime of the game table
-          world.Players[world.playerID].LeaveTime = DateTime.Now;
+          Player currentPlayer = world.Players[world.playerID];
+          currentPlayer.LeaveTime = DateTime.Now;
           databaseController.UpdateGameEndTimeClient(currentGameId, world.Players[world.playerID].LeaveTime);
+          databaseController.UpdatePlayerLeaveTime(currentGameId, currentPlayer);
+          
           
           _client?.Disconnect();
           
           _client = null;
           
-          // world.RemovePlayer();
+          world.RemovePlayer();
+          
+          insertedPlayers.Clear();
           
           // world.Players.Clear();
      }
