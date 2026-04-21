@@ -60,7 +60,6 @@ public class NetworkController
           "uid=u1579771;" +
           "password=0974107730";
      
-     private DateTime endTime;
 
      private DatabaseController databaseController;
 
@@ -69,7 +68,7 @@ public class NetworkController
      private HashSet<int> insertedPlayers;
 
 
-     // private HashSet<int> gameIds;
+     private HashSet<int> activeGameIds;
      
      /// <summary>
      /// Initialize a new network connection (client) used for reading inputs from the server.
@@ -79,6 +78,8 @@ public class NetworkController
           _client = new NetworkConnection();
           databaseController = new DatabaseController(connectionString);
           insertedPlayers = new();
+
+          activeGameIds = new();
      }
 
      /// <summary>
@@ -192,7 +193,7 @@ public class NetworkController
                
                
                currentGameId = databaseController.UpdateGameStartTimeClient(DateTime.Now);
-               // gameIds.Add(currentGameId);
+               activeGameIds.Add(currentGameId);
                //Update after receiving the playerID from the world
                
           }
@@ -258,7 +259,7 @@ public class NetworkController
 
                                    insertedPlayers.Remove(player.ID);
                                    
-                                   // gameIds.Remove(currentGameId);
+                                   // activeGameIds.Remove(currentGameId);
                                    
                                    world.Players.Remove(player.ID);;
                               }
@@ -272,31 +273,36 @@ public class NetworkController
                               player.EnterTime = DateTime.Now;
 
 
-                              // foreach (int gameId in gameIds)
-                              // {
-                                   databaseController.UpdatePlayerMaxScore(currentGameId, player);
-                              // }
+                              player.MaxScore = player.Score;
+                              
+                              databaseController.InsertPlayer(currentGameId, player);
+                             
 
                               insertedPlayers.Add(player.ID);
                               
-                              Console.WriteLine($"Insert player ID {player.ID} ");
                          }
                          
-                         Console.WriteLine("Length of inserted Players" + insertedPlayers.Count);
-
-                         // foreach (var id in insertedPlayers)
-                         // {
-                         //      Console.WriteLine(id);
-                         // }
+                         // Console.WriteLine("Length of inserted Players" + insertedPlayers.Count);
+                         //
+                         // Console.WriteLine("Active game session" + activeGameIds.);
                          
                          if (world.Players.TryGetValue(player.ID, out Player existingPlayer))
                          {
                              
-
+                              player.MaxScore = Math.Max(existingPlayer.MaxScore, player.Score);
+                              
+                              //TODO: Currently it will store the max score of new player in new session 
                               if (player.Score > existingPlayer.MaxScore)
                               {
                                    player.MaxScore = player.Score;
-                                   databaseController.UpdatePlayerMaxScore(currentGameId, player);
+
+
+                                   //TODO: If a player join a game then, update with the max score they get from the previous game or the points they get in this game session
+                                   foreach (int gameId in activeGameIds)
+                                   {
+                                        databaseController.UpdatePlayerMaxScore(gameId, player);
+                                   }
+
                               }
                               else
                               {
@@ -308,6 +314,7 @@ public class NetworkController
                               // databaseController.InsertPlayer(currentGameId, player);
                               player.MaxScore = player.Score; 
                          }
+                         
                          
 
                          // Console.WriteLine(player.Name + " " + player.ID + " " + world.playerID +" " + player.MaxScore);
@@ -362,6 +369,8 @@ public class NetworkController
           _client = null;
           
           insertedPlayers.Clear();
+          
+          // activeGameIds.Clear();
      }
 
 
@@ -388,8 +397,12 @@ public class NetworkController
           
           world.RemovePlayer();
           
+          //Clear the list for 
           insertedPlayers.Clear();
-          
+
+          //Only remove the currentGameId, avoid losing information
+          activeGameIds.Remove(currentGameId);
+
           // world.Players.Clear();
      }
 
