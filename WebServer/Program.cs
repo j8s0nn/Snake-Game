@@ -1,31 +1,55 @@
-﻿// See https://aka.ms/new-console-template for more information
+﻿// <summary>
+//   <para>
+//     <authors> Quoc Thinh Le </authors>
+//     <date> 4/21/2026 </date>
+//     Provides a simple HTTP server that displays game and player statistics
+//     retrieved from the Snake game database.
+//   </para>
+// </summary>
+
 
 using System.Text;
 using CS3500.Networking;
 using GUI.Components.Controllers;
-using MySql.Data.MySqlClient;
-using GUI.Components.Controllers;
 using GUI.Components.Models;
 
-class Program //TODO: http://localhost:8080/
+class Program 
 {
+    /// <summary>
+    /// Represents the HTTP response header sent when a request is successfully processed (HTTP 200 OK).
+    /// </summary>
     private static string httpOkHeader =
         "HTTP/1.1 200 OK\r\n" +
         "Connection: close\r\n" +
         "Content-Type: text/html; charset=UTF-8\r\n" +
         "\r\n";
 
+    /// <summary>
+    /// Represents the HTTP response header sent when a requested resource is not found (HTTP 404).
+    /// </summary>
     private static string httpErrorHeader =
         "HTTP/1.1 404 Not Found\r\n" +
         "Connection: close\r\n" +
         "Content-Type: text/html; charset=UTF-8\r\n" +
         "\r\n";
-
+    
+    /// <summary>
+    /// Entry point of the application. Starts the HTTP server and listens for incoming client requests.
+    /// </summary>
+    /// <param name="args">Not used in this case</param>
     static void Main(string[] args)
     {
+        //Server is on http://localhost:8080/
         Server.StartServer(HandleConnection, 8080);
     }
 
+    
+    /// <summary>
+    /// Handles an incoming HTTP connection and serves game statistics from the database.
+    /// </summary>
+    /// <param name="handleConnection">
+    /// The network connection representing the incoming client HTTP request.
+    /// </param>
     static void HandleConnection(NetworkConnection handleConnection)
     {
         
@@ -75,7 +99,6 @@ class Program //TODO: http://localhost:8080/
                     return;
                 }
                 
-                Console.WriteLine("In gid"  + gid);
                 //Get the player records
                 List<PlayerRecord> playerRecords = databaseController.GetPlayerRecords(gid);
                 
@@ -156,7 +179,8 @@ class Program //TODO: http://localhost:8080/
         }
         catch (Exception e)
         {
-            Console.WriteLine(e.Message);
+            handleConnection.Send(httpErrorHeader);
+            handleConnection.Disconnect();
         }
 
 

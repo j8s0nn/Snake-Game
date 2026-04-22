@@ -53,21 +53,35 @@ public class NetworkController
      /// </summary>
      public string ErrorMessage { get; set; } = string.Empty;
      
-     //TODO: privacy
-     public string connectionString =
+     //This connection string is intentionally left for the sake of grading.
+     private string connectionString =
           "server=atr.eng.utah.edu;" +
           "database=u1579771;" +
           "uid=u1579771;" +
           "password=0974107730";
      
-
+     /// <summary>
+     /// Provides access to database operations for storing and retrieving
+     /// game and player information.
+     /// </summary>
      private DatabaseController databaseController;
 
+     /// <summary>
+     /// Stores the unique ID of the current game session in the database.
+     /// This ID is assigned when a new game starts and is used to associate
+     /// all players and events with that game.
+     /// </summary>
      private int currentGameId;
 
+     /// <summary>
+     /// Tracks player IDs that have already been inserted into the database
+     /// to prevent duplicate player records during a single game session.
+     /// </summary>
      private HashSet<int> insertedPlayers;
-
-
+     
+     /// <summary>
+     /// Tracks active game session IDs that are currently being processed or monitored.
+     /// </summary>
      private HashSet<int> activeGameIds;
      
      /// <summary>
@@ -120,8 +134,6 @@ public class NetworkController
           
           _client.Send(name);
           
-          // currentGameId = databaseController.UpdateGameStartTimeClient(DateTime.Now);
-          
           ProcessInput(world);
           
           
@@ -163,8 +175,6 @@ public class NetworkController
           try
           {
                
-               //TODO: If client connect, then it will receive the information from the snake. If the client doesn't connect and the AI client connect and disconnect in the mean time, how could we handle
-               
                //Read the ID
                input = _client.ReadLine();
                
@@ -192,9 +202,10 @@ public class NetworkController
                }
                
                
+               //Retrieve the current game ID
                currentGameId = databaseController.UpdateGameStartTimeClient(DateTime.Now);
+               
                activeGameIds.Add(currentGameId);
-               //Update after receiving the playerID from the world
                
           }
           catch (Exception e) 
@@ -210,8 +221,6 @@ public class NetworkController
      /// <param name="world">The game world to update.</param>
      private void HandleInput(World world)
      {
-          
-          
           try
           {
                string line = _client.ReadLine();
@@ -238,8 +247,7 @@ public class NetworkController
                }
                else // Player
                {
-                    //Write the data
-                    // Console.WriteLine(line);
+                    
                     
 
                     Player? player = JsonSerializer.Deserialize<Player>(line);
@@ -248,18 +256,16 @@ public class NetworkController
                     {
                          
                          
-                         //For update AIClient
+                         //Check if any player disconnected that is not the client
                          if (player.IsDisconnected)
                          {
-                              if (world.Players.TryGetValue(player.ID, out Player existing))
+                              if (world.Players.TryGetValue(player.ID, out _))
                               {
                                    player.LeaveTime = DateTime.Now;
                                    
                                    databaseController.UpdatePlayerLeaveTime(currentGameId, player);
 
                                    insertedPlayers.Remove(player.ID);
-                                   
-                                   // activeGameIds.Remove(currentGameId);
                                    
                                    world.Players.Remove(player.ID);;
                               }
@@ -268,7 +274,7 @@ public class NetworkController
                                
                          }
                          
-                         if (!insertedPlayers.Contains(player.ID)) // FIRST time seeing this player
+                         if (!insertedPlayers.Contains(player.ID)) // First time seeing this player
                          {
                               player.EnterTime = DateTime.Now;
 
@@ -282,23 +288,17 @@ public class NetworkController
                               
                          }
                          
-                         // Console.WriteLine("Length of inserted Players" + insertedPlayers.Count);
-                         //
-                         // Console.WriteLine("Active game session" + activeGameIds.);
-                         
-                         if (world.Players.TryGetValue(player.ID, out Player existingPlayer))
+                         if (world.Players.TryGetValue(player.ID, out Player existingPlayer)) // Old players, (potentially ) update the max score
                          {
                              
                               player.MaxScore = Math.Max(existingPlayer.MaxScore, player.Score);
                               
-                              //TODO: Currently it will store the max score of new player in new session 
+                              
                               if (player.Score > existingPlayer.MaxScore)
                               {
                                    player.MaxScore = player.Score;
-
-
-                                   //TODO: If a player join a game then, update with the max score they get from the previous game or the points they get in this game session
-                                   foreach (int gameId in activeGameIds)
+                                   
+                                   foreach (int gameId in activeGameIds) // Update all game sessions that involved this player
                                    {
                                         databaseController.UpdatePlayerMaxScore(gameId, player);
                                    }
@@ -309,15 +309,10 @@ public class NetworkController
                                    player.MaxScore = existingPlayer.MaxScore;
                               }
                          }
-                         else
+                         else 
                          {
-                              // databaseController.InsertPlayer(currentGameId, player);
                               player.MaxScore = player.Score; 
                          }
-                         
-                         
-
-                         // Console.WriteLine(player.Name + " " + player.ID + " " + world.playerID +" " + player.MaxScore);
                          
                          //Update for explosion effect
                          if (player.Died && !player.WasDead)
@@ -327,9 +322,6 @@ public class NetworkController
                          }
                          
                          world.AddPlayer(player);
-                         // Console.WriteLine("Added player " + player.ID);
-                         
-                         
                          
                     }
                }
@@ -350,8 +342,6 @@ public class NetworkController
                
                
                HandleError(e);
-               
-               // world.RemovePlayer();
           }
      }
 
@@ -370,7 +360,6 @@ public class NetworkController
           
           insertedPlayers.Clear();
           
-          // activeGameIds.Clear();
      }
 
 
@@ -380,9 +369,6 @@ public class NetworkController
      /// <param name="world">The game world</param>
      public void Disconnect(World world)
      {
-          // string line = _client.ReadLine();
-          
-          // endTime = DateTime.Now;
           
           //Update the endtime of the game table
           Player currentPlayer = world.Players[world.playerID];
@@ -397,13 +383,10 @@ public class NetworkController
           
           world.RemovePlayer();
           
-          //Clear the list for 
           insertedPlayers.Clear();
-
-          //Only remove the currentGameId, avoid losing information
+          
           activeGameIds.Remove(currentGameId);
-
-          // world.Players.Clear();
+          
      }
 
      /// <summary>

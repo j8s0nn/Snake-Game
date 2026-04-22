@@ -119,21 +119,20 @@ public class World
 
         lock (Players)
         {
-            if (Players.ContainsKey(player.ID))
+            if (Players.TryGetValue(player.ID, out Player existingPlayer))
             {
-                Player existingPlayer = Players[player.ID];
+                // Preserve the MaxScore we are tracking
+                player.MaxScore = Math.Max(existingPlayer.MaxScore, player.Score);
             
-                //Keep the existing time
+                // Preserve the EnterTime
                 player.EnterTime = existingPlayer.EnterTime;
             
-            
-                player.MaxScore = Math.Max(existingPlayer.MaxScore, player.Score);
+                // Now update the reference
                 Players[player.ID] = player;
-            
             }
             else
             {
-                //Store the current time
+                
                 player.EnterTime = DateTime.Now;
                 player.MaxScore = player.Score;
                 Players[player.ID] = player;
@@ -197,12 +196,18 @@ public class World
     /// <param name="powerup">The power-up to add or update.</param>
     public void AddPowerup(Powerup powerup)
     {
+
+        
+
         if (powerup == null)
         {
             return;
         }
-        
-        Powerups[powerup.ID] = powerup;
+        lock (Powerups)
+        {
+            Powerups[powerup.ID] = powerup;
+            
+        }
     }
 
 

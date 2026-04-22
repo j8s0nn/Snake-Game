@@ -77,8 +77,6 @@
     /// sending input, and receiving game state updates.
     /// </summary>
     private NetworkController _controller = new NetworkController();
-
-    
     
     /// <summary>
     /// The name of the player entered by the user.
@@ -90,8 +88,7 @@
     /// Defaults to localhost.
     /// </summary>
     private string _serverAddress = "localhost";
-    
-    
+
     /// <summary>
     /// The port number used to connect to the server. Default port is 11000.
     /// </summary>
@@ -222,21 +219,18 @@
 
                 await _context.RectAsync(0, 0, ViewWidth, ViewHeight);
                 await _context.ClipAsync();
-
-                // Because we are modifying the transformation matrix, we need to save it so we can restore it at the end
+                
                 await _context.SaveAsync();
-
-
-                // Center on origin, move to center of view port
+                
                 await _context.TranslateAsync(ViewWidth / 2, ViewHeight / 2);
                 await _context.TranslateAsync(-temp.GetSnakeHead().X, -temp.GetSnakeHead().Y);
 
-                // Draw the background:
+                // Draw the background
                 await _context.DrawImageAsync(backgroundImage, -temp.Width / 2, -temp.Height / 2, temp.Width, temp.Height);
 
                 foreach (Wall wall in temp.Walls.Values)
                 {
-                    await DrawWall(wall); // await to wait for it to finish 
+                    await DrawWall(wall); 
                 }
 
                 foreach (Player player in temp.Players.Values)
@@ -265,8 +259,7 @@
         }
         catch (Exception e)
         {
-            // //TODO: How to handlew
-            // Console.WriteLine(e.Message);
+            
         }
 
         await _context.RestoreAsync();
@@ -330,12 +323,12 @@
             await _context.BeginPathAsync();
             await _context.ArcAsync(head.X, head.Y, 8, 0, 2 * Math.PI);
 
-            // Border
+            // Border of the head   
             await _context.SetLineWidthAsync(3);
             await _context.SetStrokeStyleAsync("black");
-            await _context.StrokeAsync();
-
-            // Fill
+            await _context.StrokeAsync(); 
+            
+            // Fill the head
             await _context.SetFillStyleAsync(colors[player.ID % 10]);
             await _context.FillAsync();
 
@@ -344,7 +337,6 @@
             await _context.SetFillStyleAsync("white");
             await _context.FillTextAsync($"{player.Name}(Score:{player.Score})", head.X + 10, head.Y - 18);
         }
-
         
     }
 
@@ -374,7 +366,7 @@
     /// <param name="powerup">The power-up to render.</param>
     private async Task DrawPowerup(Powerup powerup)
     {
-        if (_context is null || powerup.IsDied)
+        if (powerup.IsDied)
         {
             return;
         }
@@ -387,7 +379,7 @@
         await _context.BeginPathAsync();
         await _context.ArcAsync(x, y, 8, 0, 2 * Math.PI);
 
-        await _context.SetLineWidthAsync(1);
+        await _context.SetLineWidthAsync(2);
         await _context.SetStrokeStyleAsync("black");
         await _context.StrokeAsync();
 
@@ -402,7 +394,6 @@
         await _context.StrokeAsync();
 
     }
-
     
     /// <summary>
     /// Draws a wall segment between two endpoints. Wall is 50x50 pixels.

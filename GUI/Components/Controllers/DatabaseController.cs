@@ -168,9 +168,7 @@ public class DatabaseController
           {
                conn.Open();
                MySqlCommand command = conn.CreateCommand();
-                    
                
-               Console.WriteLine($"Before updating: GameID: {gameId}, playerID: {player.ID} LeaveTime: {player.LeaveTime}");
                command.CommandText = @"UPDATE Player SET EndTime = @endTime WHERE GameID = @gameID AND ID = @playerID";
                
                command.Parameters.AddWithValue("@gameID", gameId);

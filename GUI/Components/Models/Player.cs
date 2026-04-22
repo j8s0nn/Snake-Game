@@ -81,17 +81,26 @@ public class Player
     /// </summary>
     public bool WasDead { get; set; } = false;
 
+    
+    /// <summary>
+    /// Get or sets the max score of a player
+    /// </summary>
     [JsonIgnore]
     public int MaxScore { get; set; } = 0;
 
+    /// <summary>
+    /// Gets or sets the enter time of a player
+    /// </summary>
     [JsonIgnore] public DateTime EnterTime { get; set; } 
 
+    
+    /// <summary>
+    /// Gets or sets the leave time of a player
+    /// </summary>
     [JsonIgnore]
     public DateTime LeaveTime  { get; set; }
 
-
-    public int GameId { get; set; }
-
+    
     /// <summary>
     /// Initialize a default player
     /// </summary>
